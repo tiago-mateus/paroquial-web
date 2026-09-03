@@ -1,0 +1,107 @@
+- generic [ref=f4e4]:
+  - main [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - generic [ref=f4e7]:
+        - generic [ref=f4e8]:
+          - paragraph [ref=f4e9]: Programação
+          - heading "Agenda" [level=1] [ref=f4e10]
+          - generic [ref=f4e11]: 4 eventos na data selecionada
+        - button "Buscar e filtrar eventos" [ref=f4e12] [cursor=pointer]
+        - button "Novo evento" [ref=f4e14] [cursor=pointer]
+      - region "Navegação da agenda" [ref=f4e17]:
+        - generic [ref=f4e18]:
+          - button "Semana anterior" [ref=f4e19] [cursor=pointer]
+          - generic [ref=f4e22]: Agosto de 2026
+          - button "Próxima semana" [ref=f4e26] [cursor=pointer]
+        - group "Visualização do calendário" [ref=f4e30]:
+          - button "Semana" [pressed] [ref=f4e31] [cursor=pointer]
+          - button "Mês" [ref=f4e32] [cursor=pointer]
+        - listbox "Dias da semana" [ref=f4e35]:
+          - option "domingo, 9 de agosto de 2026, 4 eventos" [selected] [ref=f4e36] [cursor=pointer]:
+            - generic [ref=f4e37]: Dom
+            - generic [ref=f4e38]: "9"
+          - option "segunda-feira, 10 de agosto de 2026, sem eventos" [ref=f4e43] [cursor=pointer]:
+            - generic [ref=f4e44]: Seg
+            - generic [ref=f4e45]: "10"
+          - option "terça-feira, 11 de agosto de 2026, sem eventos" [ref=f4e46] [cursor=pointer]:
+            - generic [ref=f4e47]: Ter
+            - generic [ref=f4e48]: "11"
+          - option "quarta-feira, 12 de agosto de 2026, sem eventos" [ref=f4e49] [cursor=pointer]:
+            - generic [ref=f4e50]: Qua
+            - generic [ref=f4e51]: "12"
+          - option "quinta-feira, 13 de agosto de 2026, sem eventos" [ref=f4e52] [cursor=pointer]:
+            - generic [ref=f4e53]: Qui
+            - generic [ref=f4e54]: "13"
+          - option "sexta-feira, 14 de agosto de 2026, sem eventos" [ref=f4e55] [cursor=pointer]:
+            - generic [ref=f4e56]: Sex
+            - generic [ref=f4e57]: "14"
+          - option "sábado, 15 de agosto de 2026, sem eventos" [ref=f4e58] [cursor=pointer]:
+            - generic [ref=f4e59]: Sáb
+            - generic [ref=f4e60]: "15"
+      - region [ref=f4e63]:
+        - generic [ref=f4e65]:
+          - paragraph [ref=f4e66]: 4 eventos
+          - heading "Domingo, 09 de agosto" [level=2] [ref=f4e67]
+        - generic "Eventos da data selecionada" [ref=f4e69]:
+          - article [ref=f4e70]:
+            - time [ref=f4e74]: 09:00
+            - generic [ref=f4e75]:
+              - generic [ref=f4e76]:
+                - heading "Santa Missa" [level=3] [ref=f4e77]
+                - generic [ref=f4e78]: Agora
+              - paragraph [ref=f4e79]:
+                - generic [ref=f4e83]: Igreja Matriz
+              - generic [ref=f4e84]:
+                - generic [ref=f4e85]: 09:00 - 10:00
+                - generic [ref=f4e89]: Semanal
+            - generic [ref=f4e95]:
+              - button "Editar" [ref=f4e96] [cursor=pointer]
+              - button "Duplicar" [ref=f4e101] [cursor=pointer]
+              - button "Excluir" [ref=f4e106] [cursor=pointer]
+          - article [ref=f4e111]:
+            - time [ref=f4e115]: 18:00
+            - generic [ref=f4e116]:
+              - generic [ref=f4e117]:
+                - heading "Terço dos Homens" [level=3] [ref=f4e118]
+                - generic [ref=f4e119]: Agora
+              - paragraph [ref=f4e120]:
+                - generic [ref=f4e124]: Igreja Matriz
+              - generic [ref=f4e125]: 18:00 - 18:40
+            - generic [ref=f4e130]:
+              - button "Editar" [ref=f4e131] [cursor=pointer]
+              - button "Duplicar" [ref=f4e136] [cursor=pointer]
+              - button "Excluir" [ref=f4e141] [cursor=pointer]
+          - article [ref=f4e146]:
+            - time [ref=f4e150]: 18:00
+            - generic [ref=f4e151]:
+              - generic [ref=f4e152]:
+                - heading "Santa Missa" [level=3] [ref=f4e153]
+                - generic [ref=f4e154]: Agora
+              - paragraph [ref=f4e155]:
+                - generic [ref=f4e159]: Capela N. Sra. de Fátima, Ponta da Serra
+              - generic [ref=f4e160]: 18:00 - 18:40
+            - generic [ref=f4e165]:
+              - button "Editar" [ref=f4e166] [cursor=pointer]
+              - button "Duplicar" [ref=f4e171] [cursor=pointer]
+              - button "Excluir" [ref=f4e176] [cursor=pointer]
+          - article [ref=f4e181]:
+            - time [ref=f4e185]: 19:00
+            - generic [ref=f4e186]:
+              - heading "Santa Missa" [level=3] [ref=f4e188]
+              - paragraph [ref=f4e189]:
+                - generic [ref=f4e193]: Igreja Matriz
+              - generic [ref=f4e194]: 19:00 - 19:40
+            - generic [ref=f4e199]:
+              - button "Editar" [ref=f4e200] [cursor=pointer]
+              - button "Duplicar" [ref=f4e205] [cursor=pointer]
+              - button "Excluir" [ref=f4e210] [cursor=pointer]
+  - navigation "Navegação administrativa principal" [ref=f4e215]:
+    - generic [ref=f4e216]:
+      - link "Início" [ref=f4e217] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f4e224] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f4e228] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f4e232] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

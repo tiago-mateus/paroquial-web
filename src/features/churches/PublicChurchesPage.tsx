@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Church, LocateFixed } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { PublicChurch } from "../../shared/api/churches";
 import { getTenantChurches } from "../../shared/api/churches";
 import { getTenantEvents } from "../../shared/api/events";
+import { getTenant } from "../../shared/api/tenants";
+import { PublicDesktopNavigation } from "../../shared/components/PublicNavigation";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { ChurchSearchList } from "./ChurchSearchList";
 import { ChurchesMap } from "./ChurchesMap";
 import { ChurchesMobileSheet } from "./ChurchesMobileSheet";
@@ -18,6 +21,7 @@ export function PublicChurchesPage() {
   const [isListOpen, setIsListOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>();
   const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "error">("idle");
+  const tenantQuery = useQuery({ queryKey: ["tenant", tenantSlug], queryFn: () => getTenant(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
   const churchesQuery = useQuery({
     queryKey: ["churches", tenantSlug],
     queryFn: () => getTenantChurches(tenantSlug),
@@ -32,6 +36,8 @@ export function PublicChurchesPage() {
   const selectedChurch = churches.find((church) => church.id === selectedId)
     ?? churches.find((church) => church.tipo === "matriz")
     ?? churches[0];
+  const tenantName = tenantQuery.data?.name ?? "Paroquial";
+  useDocumentTitle("Igrejas", tenantQuery.data?.name);
 
   useEffect(() => {
     if (!churches.length || churches.some((church) => church.id === selectedId)) return;
@@ -60,9 +66,10 @@ export function PublicChurchesPage() {
     <main className="fixed inset-x-0 bottom-[calc(76px+env(safe-area-inset-bottom,0px))] top-0 max-w-none overflow-hidden bg-slate-200 p-0 md:bottom-0">
       <ChurchesMap churches={churches} selectedId={selectedChurch?.id} onSelect={selectChurch} userLocation={userLocation} />
 
-      <div className="absolute left-3 top-[calc(env(safe-area-inset-top,0px)+12px)] z-10 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-[0_8px_28px_rgb(15_23_42/0.12)] backdrop-blur-xl md:hidden">
-        <Church size={15} className="text-amber-700" /> {churches.length} {churches.length === 1 ? "igreja cadastrada" : "igrejas cadastradas"}
-      </div>
+      <button type="button" onClick={() => setIsListOpen(true)} aria-label="Ver todas as igrejas" className="absolute left-3 top-[calc(env(safe-area-inset-top,0px)+12px)] z-10 flex min-h-11 max-w-[calc(100%-4.75rem)] items-center gap-2 rounded-xl border border-white/70 bg-white/90 px-3 py-1.5 text-slate-700 shadow-[0_8px_28px_rgb(15_23_42/0.12)] backdrop-blur-xl md:hidden">
+        <Church size={16} className="flex-none text-amber-700" />
+        <span className="min-w-0 text-left"><strong className="block truncate text-xs">{tenantName}</strong><small className="block text-[0.62rem] font-semibold text-slate-500">{churches.length} {churches.length === 1 ? "igreja cadastrada" : "igrejas cadastradas"}</small></span>
+      </button>
       <button
         type="button"
         onClick={locateUser}
@@ -73,10 +80,15 @@ export function PublicChurchesPage() {
         <LocateFixed size={17} className={locationStatus === "loading" ? "animate-pulse" : ""} />
       </button>
 
+      <div className="absolute left-4 top-4 z-10 hidden items-center gap-2 md:flex">
+        <Link to={`/${tenantSlug}`} className="inline-flex h-11 max-w-72 items-center gap-2 rounded-full border border-white/80 bg-white/95 px-4 text-xs font-bold text-slate-800 shadow-sm backdrop-blur-xl"><Church size={15} className="text-amber-700" /><span className="truncate">{tenantName}</span></Link>
+        <PublicDesktopNavigation tenantSlug={tenantSlug} />
+      </div>
+
       <aside className="absolute bottom-4 right-4 top-4 z-10 hidden w-[22.5rem] flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[0_28px_80px_rgb(15_23_42/0.18)] backdrop-blur-xl md:flex" aria-label="Painel de igrejas">
         <header className="flex items-center justify-between gap-4 px-5 pb-3 pt-5">
           <div>
-            <p className="m-0 text-[0.62rem] font-extrabold uppercase tracking-[0.15em] text-amber-700">Localizador</p>
+            <p className="m-0 max-w-48 truncate text-[0.62rem] font-bold text-amber-700">{tenantName}</p>
             <h1 className="m-0 text-lg font-bold tracking-tight text-slate-950">Igrejas e capelas</h1>
             <p className="mb-0 mt-0.5 text-xs text-slate-500">{churches.length} {churches.length === 1 ? "local cadastrado" : "locais cadastrados"}</p>
           </div>

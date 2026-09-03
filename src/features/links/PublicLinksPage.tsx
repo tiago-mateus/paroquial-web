@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { getTenantLinks } from "../../shared/api/links";
 import { getTenant } from "../../shared/api/tenants";
+import { getBrazilianWhatsappHref } from "../../shared/lib/phone";
 import { EmptyState, ErrorState, LoadingState } from "../../shared/components/PageState";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { HomeHeader } from "../home/HomeHeader";
 import { PublicLinkCard } from "./PublicLinkCard";
 import { normalizeLinkUrl } from "./linkPresentation";
@@ -17,6 +19,7 @@ export function PublicLinksPage() {
   const links = useMemo(() => (linksQuery.data ?? [])
     .filter((link) => link.isActive !== false && link.title.trim() && normalizeLinkUrl(link.url))
     .sort((first, second) => first.order - second.order), [linksQuery.data]);
+  useDocumentTitle("Links", tenantQuery.data?.name);
 
   if (tenantQuery.isLoading) return <LinksPageSkeleton />;
   if (tenantQuery.isError || !tenantQuery.data) {
@@ -29,7 +32,7 @@ export function PublicLinksPage() {
   const agendaHref = `${homeHref}/calendario`;
   const churchesHref = `${homeHref}/igrejas`;
   const cityLabel = [tenant.cidade, tenant.estado].filter(Boolean).join(" · ");
-  const contactHref = toWhatsappHref(tenant.telefone);
+  const contactHref = getBrazilianWhatsappHref(tenant.telefone);
 
   return (
     <main className="min-h-dvh max-w-none bg-slate-50 p-0 text-slate-950">
@@ -44,17 +47,13 @@ export function PublicLinksPage() {
         churchesHref={churchesHref}
         contactHref={contactHref}
         confessionSchedule={tenant.confessionSchedule}
-        topRightHref={homeHref}
-        topRightLabel="Início"
-        topRightIcon="home"
         variant="compact"
-        compactTitle="Canais de Acesso"
-        compactDescription="Clique em um dos cards para acessar os canais oficiais da paróquia."
+        compactTitle="Canais oficiais"
         compactBadge={links.length ? `${links.length} ${links.length === 1 ? "link" : "links"}` : undefined}
       />
 
       <section className="relative z-[2] mx-auto -mt-7 max-w-3xl px-0 sm:px-4 md:-mt-6">
-        <div className="min-h-[24rem] rounded-t-[2rem] bg-white px-4 pb-10 pt-6 shadow-[0_-12px_34px_rgb(15_23_42/0.09)] sm:rounded-[2rem] sm:px-6 md:p-8 md:shadow-[0_16px_44px_rgb(15_23_42/0.07)]">
+        <div className="min-h-[24rem] rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-6 shadow-[0_-12px_34px_rgb(15_23_42/0.09)] sm:rounded-[2rem] sm:px-6 md:p-8 md:shadow-[0_16px_44px_rgb(15_23_42/0.07)]">
           <div>
             {linksQuery.isLoading ? (
               <LinksGridSkeleton />
@@ -83,10 +82,5 @@ function LinksGridSkeleton() {
 }
 
 function LinksPageSkeleton() {
-  return <main className="min-h-dvh max-w-none bg-slate-50 p-0"><div className="min-h-[18rem] animate-pulse bg-[linear-gradient(120deg,#78350f,#1f2937)] md:min-h-[24rem]" /><section className="relative z-[2] mx-auto -mt-7 max-w-3xl sm:px-4"><div className="min-h-80 rounded-t-[2rem] bg-white p-6 sm:rounded-[2rem]"><LoadingState title="Preparando os canais..." /></div></section></main>;
-}
-
-function toWhatsappHref(value?: string | null) {
-  const normalized = value?.replace(/\D/g, "");
-  return normalized ? `https://wa.me/${normalized}` : undefined;
+  return <main className="min-h-dvh max-w-none bg-slate-50 p-0"><div className="min-h-[18rem] animate-pulse bg-slate-800 md:min-h-[24rem]" /><section className="relative z-[2] mx-auto -mt-7 max-w-3xl sm:px-4"><div className="min-h-80 rounded-t-[2rem] bg-white p-6 sm:rounded-[2rem]"><LoadingState title="Preparando os canais..." /></div></section></main>;
 }

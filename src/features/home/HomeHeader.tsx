@@ -1,19 +1,13 @@
 import {
-  CalendarDays,
-  Church,
   Home,
   Link as LinkIcon,
-  Link2,
   MapPin,
   MessageCircleMore,
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
-import type {
-  ConfessionScheduleItem,
-  HomeActionsConfig,
-  HomeHeaderConfig,
-} from "../../shared/api/tenants";
+import { Link } from "react-router-dom";
+import type { ConfessionScheduleItem, HomeActionsConfig, HomeHeaderConfig } from "../../shared/api/tenants";
 import { classNames } from "../../shared/lib/classNames";
+import { PublicDesktopNavigation } from "../../shared/components/PublicNavigation";
 import { ConfessionAction } from "./ConfessionDialog";
 
 type TopRightIcon = "home" | "links";
@@ -23,6 +17,7 @@ type HomeHeaderProps = {
   tenantName: string;
   cidade?: string | null;
   headerConfig?: HomeHeaderConfig | null;
+  fallbackImageUrl?: string | null;
   homeActions?: HomeActionsConfig | null;
 
   /**
@@ -46,6 +41,8 @@ type HomeHeaderProps = {
   compactTitle?: string;
   compactDescription?: string;
   compactBadge?: string;
+  /** Renderiza a composição pública dentro de uma prévia administrativa não interativa. */
+  preview?: boolean;
 };
 
 type HomeAction = {
@@ -54,20 +51,17 @@ type HomeAction = {
   href?: string;
 };
 
-const INVALID_LEGACY_LABELS = new Set(["Confis"]);
-
-const actionCardBaseClass =
-  "flex min-h-[54px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition duration-200 md:min-h-[60px] md:px-4 md:py-3";
+const actionCardBaseClass = (preview: boolean) =>
+  `flex min-h-[54px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition duration-200 ${preview ? "" : "md:min-h-[60px] md:px-4 md:py-3"}`;
 
 export function HomeHeader({
   tenantName,
   cidade,
   headerConfig,
-  homeActions,
+  fallbackImageUrl,
   homeHref,
   linksHref,
   agendaHref,
-  churchesHref,
   contactHref,
   confessionSchedule,
   topRightHref,
@@ -77,33 +71,24 @@ export function HomeHeader({
   compactTitle,
   compactDescription,
   compactBadge,
+  preview = false,
 }: HomeHeaderProps) {
-  const visual = resolveVisual(headerConfig);
+  const visual = resolveVisual(headerConfig, fallbackImageUrl);
   const compact = variant === "compact";
 
   const resolvedHomeHref = homeHref || resolveBaseHref(agendaHref);
-  const resolvedChurchesHref =
-    churchesHref || joinRoute(resolvedHomeHref, "igrejas");
+  const tenantSlug = resolvedHomeHref.split("/").filter(Boolean)[0] ?? "";
 
   const confessionAction: HomeAction = {
-    label: normalizeLabel(
-      homeActions?.confissoes?.label,
-      "Confissões",
-    ),
-    subtitle:
-      homeActions?.confissoes?.subtitle?.trim() || "Ver horários",
-    href: homeActions?.confissoes?.href?.trim() || agendaHref,
+    label: "Confissões",
+    subtitle: "Ver horários",
+    href: agendaHref,
   };
 
   const secretariaAction: HomeAction = {
-    label: normalizeLabel(
-      homeActions?.secretaria?.label,
-      "Secretaria",
-    ),
-    subtitle:
-      homeActions?.secretaria?.subtitle?.trim() ||
-      "Falar no WhatsApp",
-    href: homeActions?.secretaria?.href?.trim() || contactHref,
+    label: "Secretaria",
+    subtitle: "Falar no WhatsApp",
+    href: contactHref,
   };
 
   const resolvedTopRightIcon =
@@ -112,8 +97,9 @@ export function HomeHeader({
   return (
     <header
       className={classNames(
-        "relative isolate overflow-hidden px-4 pt-4 sm:px-6",
-        compact ? "pb-10 md:pb-10 md:pt-5" : "pb-10 md:pb-14 md:pt-6",
+        "relative isolate overflow-hidden pt-4",
+        preview ? "px-4" : "px-4 sm:px-6",
+        preview ? "pb-10" : compact ? "pb-10 md:pb-10 md:pt-5" : "pb-10 md:pb-14 md:pt-6",
       )}
       style={visual.style}
     >
@@ -127,13 +113,11 @@ export function HomeHeader({
         />
       ) : null}
 
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-black/10" />
-
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.30)_0%,rgba(0,0,0,0.08)_42%,rgba(0,0,0,0.62)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black/45" />
 
       <div className={classNames(
         "mx-auto flex max-w-6xl flex-col",
-        compact ? "min-h-30 md:min-h-[190px]" : "min-h-30 md:min-h-[310px]",
+        preview ? "min-h-[225px]" : compact ? "min-h-30 md:min-h-[190px]" : "min-h-30 md:min-h-[310px]",
       )}>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           {cidade?.trim() ? (
@@ -146,14 +130,9 @@ export function HomeHeader({
             <span aria-hidden="true" />
           )}
 
-          <DesktopNavigation
-            homeHref={resolvedHomeHref}
-            agendaHref={agendaHref}
-            churchesHref={resolvedChurchesHref}
-            linksHref={linksHref}
-          />
+          {!preview ? <PublicDesktopNavigation tenantSlug={tenantSlug} variant="onImage" /> : null}
 
-          {compact ? (
+          {compact && topRightHref ? (
             <Link
               to={topRightHref ?? linksHref}
               className="inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/10 px-3 py-1 text-xs font-bold text-white/90 backdrop-blur-xl transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent md:hidden"
@@ -171,7 +150,7 @@ export function HomeHeader({
           ) : null}
         </div>
 
-        <div className={classNames("mt-auto", compact ? "pt-8 md:pt-10" : "max-w-3xl pt-7 md:pt-12")}>
+        <div className={classNames("mt-auto", preview ? "max-w-3xl pt-7" : compact ? "pt-8 md:pt-10" : "max-w-3xl pt-7 md:pt-12")}>
           {!compact ? (
             <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-amber-100/85 md:text-[0.68rem] md:tracking-[0.16em]">
               {getGreeting()} — seja bem-vindo
@@ -190,19 +169,20 @@ export function HomeHeader({
               {compactBadge ? <span className="mb-0.5 flex-none rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/90 shadow-sm backdrop-blur-xl">{compactBadge}</span> : null}
             </div>
           ) : (
-            <h1 className="m-0 max-w-[22ch] text-[1.95rem] font-bold leading-[1.06] tracking-[-0.025em] text-white drop-shadow-md sm:text-[2.4rem] md:max-w-[18ch] md:text-5xl">
+            <h1 className={classNames("m-0 max-w-[22ch] text-[1.95rem] font-bold leading-[1.06] tracking-[-0.025em] text-white drop-shadow-md", preview ? "" : "sm:text-[2.4rem] md:max-w-[18ch] md:text-5xl")}>
               {tenantName}
             </h1>
           )}
         </div>
 
         {!compact ? (
-          <div className="grid grid-cols-2 gap-2 pt-5 md:max-w-xl md:gap-3 md:pt-6">
-            <SecretaryAction action={secretariaAction} />
+          <div className={classNames("grid grid-cols-2 gap-2 pt-5", preview ? "" : "md:max-w-xl md:gap-3 md:pt-6")}>
+            <SecretaryAction action={secretariaAction} preview={preview} />
 
             <ConfessionAction
               action={confessionAction}
               schedule={confessionSchedule}
+              preview={preview}
             />
           </div>
         ) : null}
@@ -211,78 +191,12 @@ export function HomeHeader({
   );
 }
 
-type DesktopNavigationProps = {
-  homeHref: string;
-  agendaHref: string;
-  churchesHref: string;
-  linksHref: string;
-};
-
-function DesktopNavigation({
-  homeHref,
-  agendaHref,
-  churchesHref,
-  linksHref,
-}: DesktopNavigationProps) {
-  const items = [
-    {
-      label: "Início",
-      href: homeHref,
-      icon: Home,
-      end: true,
-    },
-    {
-      label: "Agenda",
-      href: agendaHref,
-      icon: CalendarDays,
-      end: false,
-    },
-    {
-      label: "Igrejas",
-      href: churchesHref,
-      icon: Church,
-      end: false,
-    },
-    {
-      label: "Links",
-      href: linksHref,
-      icon: Link2,
-      end: false,
-    },
-  ];
-
-  return (
-    <nav
-      aria-label="Navegação pública"
-      className="hidden items-center gap-1 rounded-full border border-white/15 bg-black/10 p-1 shadow-sm backdrop-blur-xl md:flex"
-    >
-      {items.map(({ icon: Icon, label, href, end }) => (
-        <NavLink
-          key={label}
-          end={end}
-          to={href}
-          className={({ isActive }) =>
-            [
-              "inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition duration-200",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80",
-              isActive
-                ? "bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950"
-                : "text-white/80 hover:bg-white/10 hover:text-white",
-            ].join(" ")
-          }
-        >
-          <Icon size={14} aria-hidden="true" />
-          <span>{label}</span>
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
-
 function SecretaryAction({
   action,
+  preview,
 }: {
   action: HomeAction;
+  preview: boolean;
 }) {
   const content = (
     <>
@@ -296,9 +210,7 @@ function SecretaryAction({
         </span>
 
         <small className="truncate text-[0.65rem] leading-tight text-inherit opacity-70">
-          {action.href
-            ? action.subtitle
-            : "Contato indisponível"}
+          {action.subtitle}
         </small>
       </span>
     </>
@@ -309,7 +221,7 @@ function SecretaryAction({
       <div
         aria-disabled="true"
         className={[
-          actionCardBaseClass,
+          actionCardBaseClass(preview),
           "cursor-not-allowed border-white/15 bg-white/10 text-white/60 backdrop-blur-md",
         ].join(" ")}
       >
@@ -319,7 +231,7 @@ function SecretaryAction({
   }
 
   const className = [
-    actionCardBaseClass,
+    actionCardBaseClass(preview),
           "border-white bg-white text-slate-950 shadow-sm",
           "hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
@@ -347,15 +259,13 @@ function SecretaryAction({
 
 function resolveVisual(
   headerConfig?: HomeHeaderConfig | null,
+  fallbackImageUrl?: string | null,
 ) {
   const gradientFrom =
     headerConfig?.gradientFrom?.trim() || "#7c2d12";
 
-  const gradientTo =
-    headerConfig?.gradientTo?.trim() || "#263241";
-
   const imageUrl =
-    headerConfig?.imageUrl?.trim() || null;
+    headerConfig?.imageUrl?.trim() || fallbackImageUrl?.trim() || null;
 
   const imageOpacity =
     typeof headerConfig?.imageOpacity === "number"
@@ -367,25 +277,8 @@ function resolveVisual(
     imageOpacity,
     style: {
       backgroundColor: gradientFrom,
-      backgroundImage: `linear-gradient(120deg, ${gradientFrom}, ${gradientTo})`,
     },
   };
-}
-
-function normalizeLabel(
-  value: string | null | undefined,
-  fallback: string,
-) {
-  const normalized = value?.trim();
-
-  if (
-    !normalized ||
-    INVALID_LEGACY_LABELS.has(normalized)
-  ) {
-    return fallback;
-  }
-
-  return normalized;
 }
 
 function getGreeting(date = new Date()) {
@@ -434,20 +327,6 @@ function resolveBaseHref(agendaHref: string) {
   );
 
   return resolvedHref || "/";
-}
-
-function joinRoute(
-  baseHref: string,
-  route: string,
-) {
-  const normalizedBase =
-    baseHref === "/"
-      ? ""
-      : baseHref.replace(/\/+$/, "");
-
-  const normalizedRoute = route.replace(/^\/+/, "");
-
-  return `${normalizedBase}/${normalizedRoute}`;
 }
 
 function clamp(

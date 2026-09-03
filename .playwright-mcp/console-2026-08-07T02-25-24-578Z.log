@@ -1,0 +1,19 @@
+[     693ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[     838ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[    1037ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[    1037ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[    1037ms] [LOG] Worker script URL: http://localhost:5173/mockServiceWorker.js @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[    1037ms] [LOG] Worker scope: http://localhost:5173/ @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[    1038ms] [LOG] Client ID: %s (%s) c12d3cda-b6e6-4f5d-8aa3-9f16c62df544 top-level @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[    1490ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1490ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1490ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000201","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1491ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1491ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1491ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[   69125ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[   69125ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[   69125ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000201","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[   69126ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[   69126ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[   69126ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553

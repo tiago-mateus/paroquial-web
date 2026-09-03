@@ -1,0 +1,59 @@
+[     535ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[     832ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[     832ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[     832ms] [LOG] Worker script URL: http://localhost:4173/mockServiceWorker.js @ http://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[     832ms] [LOG] Worker scope: http://localhost:4173/ @ http://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[     833ms] [LOG] Client ID: %s (%s) 3fb1921b-c206-473e-b357-ccdad623a752 top-level @ http://localhost:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[    1288ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1288ms] [LOG] Handler: HttpHandler @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1288ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000201","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1289ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1289ms] [LOG] Handler: HttpHandler @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1289ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1332ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <Outlet>
+      <RenderedRoute match={{params:{...}, ...}} routeContext={{outlet:null, ...}}>
+        <AdminCalendarPage>
+          <section className="min-h-[cal...">
+            <AdminPageHeader>
+            <div className="mx-auto gr...">
+              <section>
+              <div className="grid items...">
+                <Agenda>
+                <section className="grid min-w..." aria-labelledby="admin-sele...">
+                  <div>
+                  <div>
+                  <AdminDayTimeline events={[...]} onSelect={function onSelect} onDuplicate={function openDuplicate} ...>
+                    <div className="overflow-h...">
+                      <TimelineEventos events={[...]} now={Date} variant="admin" onSelect={function onSelect} ...>
+                        <div className="relative o...">
+                          <span>
+                          <article className="relative z-10">
+>                           <button
+>                             type="button"
+>                             onClick={function onClick}
+>                             aria-label="Encontro, Terço dos Homens, 18:00 - 18:40, Igreja Matriz, Próximo"
+>                             className="group relative m-0 grid w-full items-stretch gap-x-2 rounded-xl border-0 pl-0..."
+>                           >
+                              <span>
+                              <span>
+                              <span>
+                              <span>
+                              <div className="hidden ite...">
+>                               <button
+>                                 type="button"
+>                                 onClick={function onClick}
+>                                 aria-label="Duplicar Terço dos Homens"
+>                                 title="Duplicar"
+>                                 className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hove..."
+>                               >
+                                ...
+                              ...
+                          ...
+            ...
+ @ http://localhost:4173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:2155
+[    1333ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:4173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:2162

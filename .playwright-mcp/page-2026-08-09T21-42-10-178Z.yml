@@ -1,0 +1,37 @@
+- generic [ref=f18e4]:
+  - banner [ref=f18e5]:
+    - generic [ref=f18e6]:
+      - paragraph [ref=f18e7]: Paroquial admin
+      - strong [ref=f18e8]: Conteúdo
+    - link "Ver site público" [ref=f18e9] [cursor=pointer]:
+      - /url: /sao-jose
+  - main [ref=f18e14]:
+    - generic [ref=f18e16]:
+      - generic [ref=f18e17]:
+        - button "Destaques" [ref=f18e18] [cursor=pointer]
+        - button "Canais oficiais" [ref=f18e19] [cursor=pointer]
+        - button "Página inicial" [ref=f18e20] [cursor=pointer]
+        - button "Novo destaque" [ref=f18e21] [cursor=pointer]
+      - generic [ref=f18e23]:
+        - generic [ref=f18e25]:
+          - heading "Destaques publicados" [level=2] [ref=f18e26]
+          - paragraph [ref=f18e27]: Comunicados que aparecem no carrossel da página inicial
+        - generic [ref=f18e28]:
+          - button "Festa do Padroeiro Programacao especial durante toda a semana." [ref=f18e29] [cursor=pointer]:
+            - generic [ref=f18e33]:
+              - strong [ref=f18e34]: Festa do Padroeiro
+              - generic [ref=f18e35]: Programacao especial durante toda a semana.
+          - button "Campanha do Agasalho Doe roupas em bom estado na secretaria paroquial." [ref=f18e40] [cursor=pointer]:
+            - generic [ref=f18e44]:
+              - strong [ref=f18e45]: Campanha do Agasalho
+              - generic [ref=f18e46]: Doe roupas em bom estado na secretaria paroquial.
+  - navigation "Navegação administrativa principal" [ref=f18e51]:
+    - generic [ref=f18e52]:
+      - link "Início" [ref=f18e53] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f18e60] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f18e64] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f18e68] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

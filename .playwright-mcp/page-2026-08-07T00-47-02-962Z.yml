@@ -1,0 +1,150 @@
+- generic [ref=f11e4]:
+  - main [ref=f11e5]:
+    - generic [ref=f11e6]:
+      - generic [ref=f11e7]:
+        - generic [ref=f11e8]:
+          - strong [ref=f11e9]: Agenda
+          - button "Semana anterior" [ref=f11e10] [cursor=pointer]
+          - button "ago. de 2026" [active] [ref=f11e13] [cursor=pointer]
+          - button "Próxima semana" [ref=f11e14] [cursor=pointer]
+          - button "Criar evento em Quinta-feira, 06 de agosto" [ref=f11e17] [cursor=pointer]
+        - region "Navegação da agenda" [ref=f11e19]:
+          - generic [ref=f11e21]:
+            - generic [ref=f11e22]:
+              - generic [ref=f11e23]: Dom
+              - generic [ref=f11e24]: Seg
+              - generic [ref=f11e25]: Ter
+              - generic [ref=f11e26]: Qua
+              - generic [ref=f11e27]: Qui
+              - generic [ref=f11e28]: Sex
+              - generic [ref=f11e29]: Sáb
+            - listbox "Dias da semana" [ref=f11e31]:
+              - option "domingo, 2 de agosto de 2026, 1 eventos" [ref=f11e32] [cursor=pointer]:
+                - generic [ref=f11e33]: "2"
+              - option "segunda-feira, 3 de agosto de 2026, sem eventos" [ref=f11e36] [cursor=pointer]:
+                - generic [ref=f11e37]: "3"
+              - option "terça-feira, 4 de agosto de 2026, sem eventos" [ref=f11e38] [cursor=pointer]:
+                - generic [ref=f11e39]: "4"
+              - option "quarta-feira, 5 de agosto de 2026, sem eventos" [ref=f11e40] [cursor=pointer]:
+                - generic [ref=f11e41]: "5"
+              - option "quinta-feira, 6 de agosto de 2026, 3 eventos" [selected] [ref=f11e42] [cursor=pointer]:
+                - generic [ref=f11e43]: "6"
+              - option "sexta-feira, 7 de agosto de 2026, sem eventos" [ref=f11e48] [cursor=pointer]:
+                - generic [ref=f11e49]: "7"
+              - option "sábado, 8 de agosto de 2026, sem eventos" [ref=f11e50] [cursor=pointer]:
+                - generic [ref=f11e51]: "8"
+        - region "Quinta-feira, 06 de agosto" [ref=f11e53]:
+          - generic [ref=f11e54]:
+            - generic [ref=f11e55]:
+              - heading "Quinta-feira, 06 de agosto" [level=1] [ref=f11e56]
+              - paragraph [ref=f11e57]: 3 eventos
+            - button "Buscar e filtrar eventos" [ref=f11e59] [cursor=pointer]
+          - generic [ref=f11e62]:
+            - article [ref=f11e64]:
+              - button "Encontro, Terço dos Homens, 18:00 - 18:40, Igreja Matriz" [ref=f11e65]:
+                - time [ref=f11e69]: 18:00
+                - generic [ref=f11e70]:
+                  - strong [ref=f11e72]: Terço dos Homens
+                  - generic [ref=f11e73]: Igreja Matriz
+                - button "Ações de Terço dos Homens" [ref=f11e79] [cursor=pointer]
+            - article [ref=f11e84]:
+              - button "Adoração, Santa Missa, 18:00 - 18:40, Capela N. Sra. de Fátima, Ponta da Serra" [ref=f11e85]:
+                - time [ref=f11e89]: 18:00
+                - generic [ref=f11e90]:
+                  - strong [ref=f11e92]: Santa Missa
+                  - generic [ref=f11e93]: Capela N. Sra. de Fátima, Ponta da Serra
+                - button "Ações de Santa Missa" [ref=f11e99] [cursor=pointer]
+            - article [ref=f11e104]:
+              - button "Adoração, Santa Missa, 19:00 - 19:40, Igreja Matriz" [ref=f11e105]:
+                - time [ref=f11e109]: 19:00
+                - generic [ref=f11e110]:
+                  - strong [ref=f11e112]: Santa Missa
+                  - generic [ref=f11e113]: Igreja Matriz
+                - button "Ações de Santa Missa" [ref=f11e119] [cursor=pointer]
+      - dialog "Escolher data" [ref=f11e126]:
+        - generic [ref=f11e128]:
+          - generic [ref=f11e129]:
+            - button "Mês anterior" [ref=f11e130] [cursor=pointer]
+            - strong [ref=f11e133]: Agosto de 2026
+            - button "Próximo mês" [ref=f11e134] [cursor=pointer]
+          - generic [ref=f11e137]:
+            - generic [ref=f11e138]: Dom
+            - generic [ref=f11e139]: Seg
+            - generic [ref=f11e140]: Ter
+            - generic [ref=f11e141]: Qua
+            - generic [ref=f11e142]: Qui
+            - generic [ref=f11e143]: Sex
+            - generic [ref=f11e144]: Sáb
+          - grid "Calendário mensal" [ref=f11e146]:
+            - gridcell "sábado, 1 de agosto de 2026, sem eventos" [ref=f11e153] [cursor=pointer]:
+              - generic [ref=f11e154]: "1"
+            - gridcell "domingo, 2 de agosto de 2026, 1 eventos" [ref=f11e155] [cursor=pointer]:
+              - generic [ref=f11e156]: "2"
+            - gridcell "segunda-feira, 3 de agosto de 2026, sem eventos" [ref=f11e159] [cursor=pointer]:
+              - generic [ref=f11e160]: "3"
+            - gridcell "terça-feira, 4 de agosto de 2026, sem eventos" [ref=f11e161] [cursor=pointer]:
+              - generic [ref=f11e162]: "4"
+            - gridcell "quarta-feira, 5 de agosto de 2026, sem eventos" [ref=f11e163] [cursor=pointer]:
+              - generic [ref=f11e164]: "5"
+            - gridcell "quinta-feira, 6 de agosto de 2026, 3 eventos" [selected] [ref=f11e165] [cursor=pointer]:
+              - generic [ref=f11e166]: "6"
+            - gridcell "sexta-feira, 7 de agosto de 2026, sem eventos" [ref=f11e171] [cursor=pointer]:
+              - generic [ref=f11e172]: "7"
+            - gridcell "sábado, 8 de agosto de 2026, sem eventos" [ref=f11e173] [cursor=pointer]:
+              - generic [ref=f11e174]: "8"
+            - gridcell "domingo, 9 de agosto de 2026, 1 eventos" [ref=f11e175] [cursor=pointer]:
+              - generic [ref=f11e176]: "9"
+            - gridcell "segunda-feira, 10 de agosto de 2026, sem eventos" [ref=f11e179] [cursor=pointer]:
+              - generic [ref=f11e180]: "10"
+            - gridcell "terça-feira, 11 de agosto de 2026, sem eventos" [ref=f11e181] [cursor=pointer]:
+              - generic [ref=f11e182]: "11"
+            - gridcell "quarta-feira, 12 de agosto de 2026, sem eventos" [ref=f11e183] [cursor=pointer]:
+              - generic [ref=f11e184]: "12"
+            - gridcell "quinta-feira, 13 de agosto de 2026, sem eventos" [ref=f11e185] [cursor=pointer]:
+              - generic [ref=f11e186]: "13"
+            - gridcell "sexta-feira, 14 de agosto de 2026, sem eventos" [ref=f11e187] [cursor=pointer]:
+              - generic [ref=f11e188]: "14"
+            - gridcell "sábado, 15 de agosto de 2026, sem eventos" [ref=f11e189] [cursor=pointer]:
+              - generic [ref=f11e190]: "15"
+            - gridcell "domingo, 16 de agosto de 2026, 1 eventos" [ref=f11e191] [cursor=pointer]:
+              - generic [ref=f11e192]: "16"
+            - gridcell "segunda-feira, 17 de agosto de 2026, sem eventos" [ref=f11e195] [cursor=pointer]:
+              - generic [ref=f11e196]: "17"
+            - gridcell "terça-feira, 18 de agosto de 2026, sem eventos" [ref=f11e197] [cursor=pointer]:
+              - generic [ref=f11e198]: "18"
+            - gridcell "quarta-feira, 19 de agosto de 2026, sem eventos" [ref=f11e199] [cursor=pointer]:
+              - generic [ref=f11e200]: "19"
+            - gridcell "quinta-feira, 20 de agosto de 2026, sem eventos" [ref=f11e201] [cursor=pointer]:
+              - generic [ref=f11e202]: "20"
+            - gridcell "sexta-feira, 21 de agosto de 2026, sem eventos" [ref=f11e203] [cursor=pointer]:
+              - generic [ref=f11e204]: "21"
+            - gridcell "sábado, 22 de agosto de 2026, sem eventos" [ref=f11e205] [cursor=pointer]:
+              - generic [ref=f11e206]: "22"
+            - gridcell "domingo, 23 de agosto de 2026, 1 eventos" [ref=f11e207] [cursor=pointer]:
+              - generic [ref=f11e208]: "23"
+            - gridcell "segunda-feira, 24 de agosto de 2026, sem eventos" [ref=f11e211] [cursor=pointer]:
+              - generic [ref=f11e212]: "24"
+            - gridcell "terça-feira, 25 de agosto de 2026, sem eventos" [ref=f11e213] [cursor=pointer]:
+              - generic [ref=f11e214]: "25"
+            - gridcell "quarta-feira, 26 de agosto de 2026, sem eventos" [ref=f11e215] [cursor=pointer]:
+              - generic [ref=f11e216]: "26"
+            - gridcell "quinta-feira, 27 de agosto de 2026, sem eventos" [ref=f11e217] [cursor=pointer]:
+              - generic [ref=f11e218]: "27"
+            - gridcell "sexta-feira, 28 de agosto de 2026, sem eventos" [ref=f11e219] [cursor=pointer]:
+              - generic [ref=f11e220]: "28"
+            - gridcell "sábado, 29 de agosto de 2026, sem eventos" [ref=f11e221] [cursor=pointer]:
+              - generic [ref=f11e222]: "29"
+            - gridcell "domingo, 30 de agosto de 2026, 1 eventos" [ref=f11e223] [cursor=pointer]:
+              - generic [ref=f11e224]: "30"
+            - gridcell "segunda-feira, 31 de agosto de 2026, sem eventos" [ref=f11e227] [cursor=pointer]:
+              - generic [ref=f11e228]: "31"
+  - navigation "Navegação administrativa principal" [ref=f11e229]:
+    - generic [ref=f11e230]:
+      - link "Início" [ref=f11e231] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f11e238] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f11e242] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f11e246] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

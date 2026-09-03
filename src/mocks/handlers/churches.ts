@@ -1,6 +1,12 @@
 import { delay, http, HttpResponse } from "msw";
 import { churches, churchAccessByTenant } from "../data/churches";
+import { findTenantBySlug } from "../data";
 import { baseUrl } from "../utils";
+import type { UpsertChurchRequest } from "../../shared/api/churches";
+
+function publicChurch(church: (typeof churches)[number]) {
+  return { ...church, tenantSlug: undefined };
+}
 
 export const churchHandlers = [
   http.get(`${baseUrl}/api/v1/tenants/:tenantSlug/churches`, async ({ params }) => {
@@ -24,19 +30,36 @@ export const churchHandlers = [
 
     const result = churches
       .filter((church) => church.tenantSlug === tenantSlug)
-      .map((church) => ({
-        id: church.id,
-        tenantId: church.tenantId,
-        nome: church.nome,
-        endereco: church.endereco,
-        latitude: church.latitude,
-        longitude: church.longitude,
-        urlImg: church.urlImg,
-        telefone: church.telefone,
-        tipo: church.tipo,
-      }))
+      .map(publicChurch)
       .sort((first, second) => first.nome.localeCompare(second.nome, "pt-BR"));
 
     return HttpResponse.json(result);
+  }),
+
+  http.post(`${baseUrl}/api/v1/admin/tenants/:tenantSlug/churches`, async ({ params, request }) => {
+    await delay(250);
+    const tenantSlug = String(params.tenantSlug);
+    const tenant = findTenantBySlug(tenantSlug);
+    if (!tenant) return HttpResponse.json({ code: "TENANT_NOT_FOUND", message: "Paróquia não encontrada." }, { status: 404 });
+    const input = await request.json() as UpsertChurchRequest;
+    const church = { ...input, id: crypto.randomUUID(), tenantId: tenant.id, tenantSlug };
+    churches.push(church);
+    return HttpResponse.json(publicChurch(church), { status: 201 });
+  }),
+
+  http.put(`${baseUrl}/api/v1/admin/tenants/:tenantSlug/churches/:churchId`, async ({ params, request }) => {
+    await delay(250);
+    const church = churches.find((item) => item.tenantSlug === String(params.tenantSlug) && item.id === String(params.churchId));
+    if (!church) return HttpResponse.json({ code: "CHURCH_NOT_FOUND", message: "Igreja não encontrada." }, { status: 404 });
+    Object.assign(church, await request.json() as UpsertChurchRequest);
+    return HttpResponse.json(publicChurch(church));
+  }),
+
+  http.delete(`${baseUrl}/api/v1/admin/tenants/:tenantSlug/churches/:churchId`, async ({ params }) => {
+    await delay(180);
+    const index = churches.findIndex((item) => item.tenantSlug === String(params.tenantSlug) && item.id === String(params.churchId));
+    if (index < 0) return HttpResponse.json({ code: "CHURCH_NOT_FOUND", message: "Igreja não encontrada." }, { status: 404 });
+    churches.splice(index, 1);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

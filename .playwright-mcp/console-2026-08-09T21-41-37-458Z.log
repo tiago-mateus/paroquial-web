@@ -1,0 +1,15 @@
+[     315ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:4173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[     506ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[     506ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[     506ms] [LOG] Worker script URL: http://127.0.0.1:4173/mockServiceWorker.js @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[     506ms] [LOG] Worker scope: http://127.0.0.1:4173/ @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[     506ms] [LOG] Client ID: %s (%s) d1303966-1732-475c-8f54-cc2702c51400 top-level @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[     871ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[     871ms] [LOG] Handler: HttpHandler @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[     872ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"banner-sj-1","tipo":"aviso","titulo":"Fest…r-gradient(135deg, #0369a1, #164e63)","order":1}]} @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[     873ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[     873ms] [LOG] Handler: HttpHandler @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[     874ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"link-inactive","title":"Canal desativado",…nge","variant":"pill","order":7,"isActive":true}]} @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[     874ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[     875ms] [LOG] Handler: HttpHandler @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[     875ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: {"id":"00000000-0000-0000-0000-000000000101","slug…me":"11:00"}],"theme":{"primaryColor":"#2563eb"}}} @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553

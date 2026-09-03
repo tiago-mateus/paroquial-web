@@ -21,16 +21,33 @@ describe("PublicHomePage", () => {
     expect(await screen.findByText("Evangelho do Dia")).toBeInTheDocument();
     expect(await screen.findAllByText("Santa Missa")).not.toHaveLength(0);
     expect(screen.getByRole("navigation", { name: "Navegação principal da paróquia" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Secretaria/i })).toHaveAttribute("href", "https://wa.me/11999999999");
+    expect(screen.getByRole("link", { name: /Secretaria/i })).toHaveAttribute("href", "https://wa.me/5511999999999");
   });
 
   it("abre os horários de confissão a partir do hero", async () => {
     renderHome("/sao-jose");
 
-    fireEvent.click(await screen.findByRole("button", { name: /Confissoes/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confissões/i }));
 
     expect(screen.getByRole("dialog", { name: "Horários de confissões" })).toBeInTheDocument();
     expect(screen.getByText("Quarta a Sexta")).toBeInTheDocument();
+  });
+
+  it("mantém os textos das ações fixos mesmo com valores legados", async () => {
+    renderHome("/nossa-senhora");
+
+    expect(await screen.findByRole("link", { name: /Secretaria/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Confissões/i })).toBeInTheDocument();
+    expect(screen.getByText("Falar no WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("Ver horários")).toBeInTheDocument();
+    expect(screen.queryByText("Enviar mensagem")).not.toBeInTheDocument();
+    expect(screen.queryByText("Atendimento semanal")).not.toBeInTheDocument();
+  });
+
+  it("informa quando não há horários de confissão publicados", async () => {
+    renderHome("/erro-links");
+    fireEvent.click(await screen.findByRole("button", { name: /Confissões/i }));
+    expect(screen.getByText("Nenhum horário publicado")).toBeInTheDocument();
   });
 
   it("mostra um estado claro quando a paróquia não existe", async () => {

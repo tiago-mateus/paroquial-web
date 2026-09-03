@@ -1,11 +1,19 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
-import { type KeyboardEvent, useMemo, useRef } from 'react';
+import { type KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 import { classNames } from '../../../shared/lib/classNames';
 import type { CalendarEvent } from '../../../shared/api/events';
-import { addDays, formatMonth, getMonthDays, getWeekDays, isSameDay, toDateKey } from '../calendar.utils';
+import {
+  addDays,
+  formatMonth,
+  getMonthGrid,
+  getWeekDays,
+  isSameDay,
+  toDateKey,
+} from '../calendar.utils';
 import { CalendarDateCell } from './CalendarDateCell';
 
-const weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const monthWeekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const weekWeekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const accessibleDateFormatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' });
 const SWIPE_THRESHOLD_PX = 42;
 
@@ -16,8 +24,16 @@ type AgendaProps = {
   selectedDate: Date;
   view: AgendaView;
   onSelectDate: (date: Date) => void;
+  onNavigateDate?: (date: Date) => void;
   onViewChange?: (view: AgendaView) => void;
+  /** Exibe botão "Hoje" na toolbar (útil na sidebar desktop) */
+  onToday?: () => void;
+  isToday?: boolean;
   className?: string;
+  hideToolbar?: boolean;
+  integratedWeekLabels?: boolean;
+  selectionTone?: 'slate' | 'amber';
+  plain?: boolean;
 };
 
 export function Agenda({
@@ -25,9 +41,17 @@ export function Agenda({
   selectedDate,
   view,
   onSelectDate,
+  onNavigateDate,
   onViewChange,
+  onToday,
+  isToday = false,
   className,
+  hideToolbar = false,
+  integratedWeekLabels = false,
+  selectionTone = 'slate',
+  plain = false,
 }: AgendaProps) {
+  const navigateDate = onNavigateDate ?? onSelectDate;
   const eventCounts = useMemo(
     () =>
       events.reduce((counts, event) => {
@@ -40,26 +64,39 @@ export function Agenda({
   const today = useMemo(() => new Date(), []);
   const pointerStartX = useRef<number | null>(null);
   const suppressDateClick = useRef(false);
+  const agendaRef = useRef<HTMLDivElement>(null);
+  const focusSelectedAfterChange = useRef(false);
 
-  function handleWeekKeyDown(event: KeyboardEvent<HTMLButtonElement>, date: Date) {
+  useEffect(() => {
+    if (!focusSelectedAfterChange.current) return;
+    const selectedRole = view === 'week' ? 'option' : 'gridcell';
+    agendaRef.current
+      ?.querySelector<HTMLButtonElement>(`[role="${selectedRole}"][aria-selected="true"]`)
+      ?.focus();
+    focusSelectedAfterChange.current = false;
+  }, [selectedDate, view]);
+
+  function handleDateKeyDown(event: KeyboardEvent<HTMLButtonElement>, date: Date) {
     let target: Date | null = null;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') target = addDays(date, 1);
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') target = addDays(date, -1);
+    if (event.key === 'ArrowRight') target = addDays(date, 1);
+    if (event.key === 'ArrowLeft') target = addDays(date, -1);
+    if (event.key === 'ArrowDown') target = addDays(date, view === 'month' ? 7 : 1);
+    if (event.key === 'ArrowUp') target = addDays(date, view === 'month' ? -7 : -1);
     if (!target) return;
     event.preventDefault();
-    onSelectDate(target);
+    focusSelectedAfterChange.current = true;
+    navigateDate(target);
   }
 
   function changePeriod(amount: number) {
     if (view === 'week') {
-      onSelectDate(addDays(selectedDate, amount * 7));
+      navigateDate(addDays(selectedDate, amount * 7));
       return;
     }
-
     const targetYear = selectedDate.getFullYear();
     const targetMonth = selectedDate.getMonth() + amount;
     const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
-    onSelectDate(new Date(targetYear, targetMonth, Math.min(selectedDate.getDate(), lastDay)));
+    navigateDate(new Date(targetYear, targetMonth, Math.min(selectedDate.getDate(), lastDay)));
   }
 
   function selectDate(date: Date) {
@@ -67,90 +104,175 @@ export function Agenda({
     onSelectDate(date);
   }
 
-  const days =
-    view === 'week'
-      ? getWeekDays(selectedDate)
-      : getMonthDays(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
-  const leading = view === 'month' ? Array.from({ length: days[0]?.getDay() ?? 0 }) : [];
+  // Semana: domingo-sábado (getWeekDays parte do domingo); Mês: segunda-domingo (pt-BR)
+  const weekDays = getWeekDays(selectedDate);
+  const monthGrid = useMemo(
+    () => getMonthGrid(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)),
+    [selectedDate],
+  );
+
+  const cells = view === 'week' ? weekDays : monthGrid;
+
+  // Mapa de dia JS (0=Dom…6=Sáb) → label seg-dom
+  const weekdayLabelByDay: Record<number, string> = {
+    0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb',
+  };
+
+  function renderCell(cell: Date | { date: Date; adjacent: boolean }) {
+    const date = 'adjacent' in cell ? cell.date : cell;
+    const adjacent = 'adjacent' in cell ? cell.adjacent : false;
+    const key = `${toDateKey(date)}-${adjacent ? 'adj' : 'cur'}`;
+    const selected = !adjacent && isSameDay(date, selectedDate);
+    const isToday = isSameDay(date, today);
+    const count = adjacent ? 0 : (eventCounts.get(toDateKey(date)) ?? 0);
+    return (
+      <CalendarDateCell
+        key={key}
+        date={date}
+        selected={selected}
+        today={isToday}
+        eventCount={count}
+        adjacent={adjacent}
+        compact={view === 'month'}
+        weekdayLabel={
+          integratedWeekLabels && view === 'week'
+            ? weekdayLabelByDay[date.getDay()]
+            : undefined
+        }
+        selectionTone={selectionTone}
+        role={view === 'month' ? 'gridcell' : 'option'}
+        tabIndex={selected ? 0 : -1}
+        ariaLabel={`${accessibleDateFormatter.format(date)}${adjacent ? ', mês adjacente' : ''}, ${count ? `${count} eventos` : 'sem eventos'}`}
+        onClick={() => selectDate(date)}
+        onKeyDown={(event) => handleDateKeyDown(event, date)}
+      />
+    );
+  }
 
   return (
     <div
+      ref={agendaRef}
       className={classNames(
         'w-full min-w-0 max-w-full overflow-hidden bg-white',
-        'md:rounded-[1.5rem] md:border md:border-slate-200/80 md:p-4',
+        plain ? '' : 'md:rounded-2xl md:border md:border-slate-200/80 md:p-4',
         className,
       )}
     >
-      <div className="flex items-center justify-between border-b border-slate-100 px-1.5 py-1 md:mb-3 md:px-0 md:pb-3 md:pt-0">
-        <button type="button" onClick={() => changePeriod(-1)} aria-label={view === 'week' ? 'Semana anterior' : 'Mês anterior'} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"><ChevronLeft size={17} /></button>
-        <strong className="text-sm font-bold tracking-[-0.01em] text-slate-800" aria-live="polite">{formatMonth(selectedDate)}</strong>
-        <button type="button" onClick={() => changePeriod(1)} aria-label={view === 'week' ? 'Próxima semana' : 'Próximo mês'} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"><ChevronRight size={17} /></button>
+      {/* Toolbar */}
+      <div
+        className={classNames(
+          'items-center justify-between border-b border-slate-100 px-1.5 py-1 md:mb-3 md:px-0 md:pb-3 md:pt-0',
+          hideToolbar ? 'hidden' : 'flex',
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => changePeriod(-1)}
+          aria-label={view === 'week' ? 'Semana anterior' : 'Mês anterior'}
+          className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+        >
+          <ChevronLeft size={17} />
+        </button>
+
+        <div className="flex min-w-0 items-center gap-2">
+          <strong
+            className="text-sm font-bold tracking-[-0.01em] text-slate-800"
+            aria-live="polite"
+          >
+            {formatMonth(selectedDate)}
+          </strong>
+          {onToday && !isToday ? (
+            <button
+              type="button"
+              onClick={onToday}
+              className="inline-flex min-h-11 items-center rounded-lg bg-amber-50 px-2 py-1 text-[0.65rem] font-bold text-amber-800 transition hover:bg-amber-100"
+            >
+              Hoje
+            </button>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => changePeriod(1)}
+          aria-label={view === 'week' ? 'Próxima semana' : 'Próximo mês'}
+          className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+        >
+          <ChevronRight size={17} />
+        </button>
       </div>
-      <div className={classNames('grid grid-cols-7', view === 'month' ? 'gap-px md:gap-1' : 'gap-1')} aria-hidden="true">
-        {weekdayLabels.map((label) => (
+
+      {/* Header de dias da semana */}
+      <div
+        className={classNames(
+          'grid grid-cols-7 gap-1',
+          integratedWeekLabels && view === 'week' ? 'hidden' : '',
+          hideToolbar && view === 'month' ? 'px-3 pt-1' : '',
+        )}
+        aria-hidden="true"
+      >
+        {(view === 'month' ? monthWeekdayLabels : weekWeekdayLabels).map((label) => (
           <span
             key={label}
-            className="py-1 text-center text-[0.58rem] font-bold uppercase tracking-[0.04em] text-slate-400 md:py-1.5 md:text-[0.6rem] md:tracking-[0.06em]"
+            className="py-1.5 text-center text-[0.68rem] font-bold uppercase tracking-[0.04em] text-slate-500 md:py-2 md:text-[0.72rem]"
           >
             {label}
           </span>
         ))}
       </div>
+
+      {/* Grid de células */}
       <div
         className={classNames(
           'touch-pan-y overflow-hidden transition-[max-height] duration-300 ease-out motion-reduce:transition-none',
-          view === 'month' ? 'max-h-[30rem]' : 'max-h-12 md:max-h-[4.25rem]',
+          view === 'month'
+            ? 'max-h-[34rem]'
+            : integratedWeekLabels
+              ? 'max-h-[5.75rem]'
+              : 'max-h-12 md:max-h-[4.25rem]',
         )}
         onPointerDown={(event) => {
-          if (view === 'week') pointerStartX.current = event.clientX;
+          pointerStartX.current = event.clientX;
         }}
         onPointerCancel={() => {
           pointerStartX.current = null;
         }}
         onPointerUp={(event) => {
-          if (view !== 'week' || pointerStartX.current === null) return;
+          if (pointerStartX.current === null) return;
           const deltaX = event.clientX - pointerStartX.current;
           pointerStartX.current = null;
           if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
           suppressDateClick.current = true;
-          onSelectDate(addDays(selectedDate, deltaX > 0 ? -7 : 7));
+          if (view === 'week') {
+            navigateDate(addDays(selectedDate, deltaX > 0 ? -7 : 7));
+          } else {
+            changePeriod(deltaX > 0 ? -1 : 1);
+          }
           window.setTimeout(() => {
             suppressDateClick.current = false;
           }, 0);
         }}
       >
         <div
-          className={classNames('grid grid-cols-7 bg-white', view === 'month' ? 'gap-px md:gap-1' : 'gap-1')}
+          className={classNames(
+            view === 'month' ? 'grid gap-1 bg-white' : 'grid grid-cols-7 gap-1 bg-white',
+            integratedWeekLabels && view === 'week' ? 'gap-1 px-4 py-3' : '',
+            hideToolbar && view === 'month' ? 'px-3 pb-3' : '',
+          )}
           role={view === 'month' ? 'grid' : 'listbox'}
           aria-label={view === 'month' ? 'Calendário mensal' : 'Dias da semana'}
           aria-orientation={view === 'week' ? 'horizontal' : undefined}
         >
-          {leading.map((_, index) => (
-            <span key={`empty-${index}`} className="bg-white" aria-hidden="true" />
-          ))}
-          {days.map((date) => {
-            const key = toDateKey(date);
-            const selected = isSameDay(date, selectedDate);
-            const isToday = isSameDay(date, today);
-            const count = eventCounts.get(key) ?? 0;
-            return (
-              <CalendarDateCell
-                key={key}
-                date={date}
-                selected={selected}
-                today={isToday}
-                eventCount={count}
-                compact={view === 'month'}
-                role={view === 'month' ? 'gridcell' : 'option'}
-                tabIndex={view === 'week' && selected ? 0 : -1}
-                ariaLabel={`${accessibleDateFormatter.format(date)}, ${count ? `${count} eventos` : 'sem eventos'}`}
-                onClick={() => selectDate(date)}
-                onKeyDown={view === 'week' ? (event) => handleWeekKeyDown(event, date) : undefined}
-              />
-            );
-          })}
+          {view === 'month'
+            ? Array.from({ length: Math.ceil(cells.length / 7) }, (_, rowIndex) => (
+                <div key={rowIndex} role="row" className="grid grid-cols-7 gap-1">
+                  {cells.slice(rowIndex * 7, rowIndex * 7 + 7).map(renderCell)}
+                </div>
+              ))
+            : cells.map(renderCell)}
         </div>
       </div>
+
       {onViewChange ? (
         <button
           type="button"

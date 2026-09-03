@@ -18,9 +18,9 @@ describe("PublicLinksPage", () => {
   it("exibe somente links ativos, ordenados e com URLs normalizadas", async () => {
     renderPage("sao-jose");
 
-    expect(await screen.findByRole("heading", { name: "Canais de Acesso" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Canais oficiais" })).toBeInTheDocument();
     expect(await screen.findByText("7 links")).toBeInTheDocument();
-    expect(screen.getByText("Clique em um dos cards para acessar os canais oficiais da paróquia.")).toBeInTheDocument();
+    expect(screen.queryByText(/Clique em um dos cards/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Confissões/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Canal desativado")).not.toBeInTheDocument();
 

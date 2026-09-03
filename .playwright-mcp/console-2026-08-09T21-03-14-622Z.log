@@ -1,0 +1,12 @@
+[     538ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:4173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[     898ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[     898ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[     898ms] [LOG] Worker script URL: http://127.0.0.1:4173/mockServiceWorker.js @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[     898ms] [LOG] Worker scope: http://127.0.0.1:4173/ @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[     898ms] [LOG] Client ID: %s (%s) 20bce4fa-661e-4e9f-9ce4-3c787aab1f78 top-level @ http://127.0.0.1:4173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[    1309ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1310ms] [LOG] Handler: HttpHandler @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1310ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000201","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1367ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1367ms] [LOG] Handler: HttpHandler @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1367ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…"","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://127.0.0.1:4173/node_modules/.vite/deps/msw.js?v=972d8c93:553

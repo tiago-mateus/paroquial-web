@@ -1,0 +1,135 @@
+- generic [ref=f38e4]:
+  - main [ref=f38e5]:
+    - generic [ref=f38e6]:
+      - generic [ref=f38e7]:
+        - generic [ref=f38e8]:
+          - strong [ref=f38e9]: Agenda
+          - button "Semana anterior" [ref=f38e10] [cursor=pointer]
+          - button "Escolher data" [ref=f38e13] [cursor=pointer]: Agosto de 2026
+          - button "Próxima semana" [ref=f38e18] [cursor=pointer]
+        - region "Navegação da agenda" [ref=f38e21]:
+          - listbox "Dias da semana" [ref=f38e25]:
+            - option "domingo, 2 de agosto de 2026, 1 eventos" [ref=f38e26] [cursor=pointer]:
+              - generic [ref=f38e27]: Dom
+              - generic [ref=f38e28]: "2"
+            - option "segunda-feira, 3 de agosto de 2026, sem eventos" [ref=f38e31] [cursor=pointer]:
+              - generic [ref=f38e32]: Seg
+              - generic [ref=f38e33]: "3"
+            - option "terça-feira, 4 de agosto de 2026, sem eventos" [ref=f38e34] [cursor=pointer]:
+              - generic [ref=f38e35]: Ter
+              - generic [ref=f38e36]: "4"
+            - option "quarta-feira, 5 de agosto de 2026, sem eventos" [ref=f38e37] [cursor=pointer]:
+              - generic [ref=f38e38]: Qua
+              - generic [ref=f38e39]: "5"
+            - option "quinta-feira, 6 de agosto de 2026, 3 eventos" [selected] [ref=f38e40] [cursor=pointer]:
+              - generic [ref=f38e41]: Qui
+              - generic [ref=f38e42]: "6"
+            - option "sexta-feira, 7 de agosto de 2026, sem eventos" [ref=f38e47] [cursor=pointer]:
+              - generic [ref=f38e48]: Sex
+              - generic [ref=f38e49]: "7"
+            - option "sábado, 8 de agosto de 2026, sem eventos" [ref=f38e50] [cursor=pointer]:
+              - generic [ref=f38e51]: Sáb
+              - generic [ref=f38e52]: "8"
+        - region "Quinta-feira, 06 de agosto" [ref=f38e54]:
+          - generic [ref=f38e55]:
+            - generic [ref=f38e56]:
+              - heading "Quinta-feira, 06 de agosto" [level=1] [ref=f38e57]
+              - paragraph [ref=f38e58]: 3 eventos
+            - button "Buscar e filtrar eventos" [ref=f38e60] [cursor=pointer]
+          - generic [ref=f38e63]:
+            - article [ref=f38e65]:
+              - button "Encontro, Terço dos Homens, 18:00 - 18:40, Igreja Matriz" [ref=f38e66]:
+                - time [ref=f38e70]: 18:00
+                - generic [ref=f38e71]:
+                  - strong [ref=f38e73]: Terço dos Homens
+                  - generic [ref=f38e74]: Igreja Matriz
+                - button "Ações de Terço dos Homens" [ref=f38e80] [cursor=pointer]
+            - article [ref=f38e85]:
+              - button "Adoração, Santa Missa, 18:00 - 18:40, Capela N. Sra. de Fátima, Ponta da Serra" [ref=f38e86]:
+                - time [ref=f38e90]: 18:00
+                - generic [ref=f38e91]:
+                  - strong [ref=f38e93]: Santa Missa
+                  - generic [ref=f38e94]: Capela N. Sra. de Fátima, Ponta da Serra
+                - button "Ações de Santa Missa" [ref=f38e100] [cursor=pointer]
+            - article [ref=f38e105]:
+              - button "Adoração, Santa Missa, 19:00 - 19:40, Igreja Matriz" [ref=f38e106]:
+                - time [ref=f38e110]: 19:00
+                - generic [ref=f38e111]:
+                  - strong [ref=f38e113]: Santa Missa
+                  - generic [ref=f38e114]: Igreja Matriz
+                - button "Ações de Santa Missa" [ref=f38e120] [cursor=pointer]
+      - button "Criar evento em Quinta-feira, 06 de agosto" [ref=f38e125] [cursor=pointer]
+      - dialog [ref=f38e128]:
+        - generic [ref=f38e129]:
+          - generic [ref=f38e136]:
+            - paragraph [ref=f38e137]: quinta-feira, 06 de agosto
+            - heading "Novo evento" [level=2] [ref=f38e138]
+          - button "Fechar formulário" [ref=f38e139] [cursor=pointer]
+        - generic [ref=f38e143]:
+          - generic [ref=f38e144]:
+            - generic [ref=f38e145]:
+              - heading [level=3] [ref=f38e146]
+              - generic [ref=f38e150]:
+                - text: Título
+                - textbox "Título Informe o título do evento." [active] [ref=f38e151]:
+                  - /placeholder: "Ex.: Santa Missa"
+                - generic [ref=f38e152]: Informe o título do evento.
+              - generic [ref=f38e153]:
+                - text: Tipo
+                - combobox "Tipo" [ref=f38e155]:
+                  - option "Missa" [selected]
+                  - option "Novena"
+                  - option "Reunião"
+                  - option "Encontro"
+                  - option "Adoração"
+                  - option "Movimento"
+                  - option "Outro"
+            - generic [ref=f38e156]:
+              - heading [level=3] [ref=f38e157]
+              - generic [ref=f38e162]:
+                - generic [ref=f38e163]:
+                  - text: Data
+                  - textbox "Data" [ref=f38e164]: 2026-08-06
+                - generic [ref=f38e165]:
+                  - text: Início
+                  - textbox "Início" [ref=f38e166]: 18:00
+                - generic [ref=f38e167]:
+                  - text: Término (opcional)
+                  - textbox "Término (opcional)" [ref=f38e168]: 19:00
+            - generic [ref=f38e169]:
+              - heading [level=3] [ref=f38e170]
+              - generic [ref=f38e175]:
+                - text: Igreja ou espaço
+                - combobox "Igreja ou espaço" [ref=f38e177]:
+                  - option "Local a definir" [selected]
+                  - option "Capela do Santíssimo"
+                  - option "Capela Nossa Senhora de Fátima"
+                  - option "Comunidade Nossa Senhora da Esperança"
+                  - option "Igreja Matriz São José"
+                  - option "Outro local..."
+            - generic [ref=f38e178]:
+              - heading [level=3] [ref=f38e179]
+              - group "Repetição do evento" [ref=f38e186]:
+                - generic [ref=f38e187] [cursor=pointer]:
+                  - radio "Não repetir" [checked] [ref=f38e188]
+                  - text: Não repetir
+                - generic [ref=f38e189] [cursor=pointer]:
+                  - radio "Semanal" [ref=f38e190]
+                  - text: Semanal
+                - generic [ref=f38e191] [cursor=pointer]:
+                  - radio "Mensal" [ref=f38e192]
+                  - text: Mensal
+            - button "Adicionar descrição" [ref=f38e194] [cursor=pointer]
+          - generic [ref=f38e198]:
+            - button "Cancelar" [ref=f38e199] [cursor=pointer]
+            - button "Criar evento" [ref=f38e200] [cursor=pointer]
+  - navigation "Navegação administrativa principal" [ref=f38e201]:
+    - generic [ref=f38e202]:
+      - link "Início" [ref=f38e203] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f38e210] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f38e214] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f38e218] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

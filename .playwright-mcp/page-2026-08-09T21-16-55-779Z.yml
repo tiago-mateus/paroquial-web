@@ -1,0 +1,163 @@
+- generic [ref=f10e4]:
+  - main [ref=f10e5]:
+    - generic [ref=f10e6]:
+      - generic [ref=f10e7]:
+        - generic [ref=f10e8]:
+          - paragraph [ref=f10e9]: Programação
+          - heading "Agenda" [level=1] [ref=f10e10]
+          - generic [ref=f10e11]: 4 eventos na data selecionada
+        - button "Buscar e filtrar eventos" [ref=f10e12] [cursor=pointer]
+        - button "Novo evento" [ref=f10e14] [cursor=pointer]
+      - region "Navegação da agenda" [ref=f10e17]:
+        - generic [ref=f10e18]:
+          - button "Mês anterior" [ref=f10e231] [cursor=pointer]
+          - generic [ref=f10e22]: Agosto de 2026
+          - button "Próximo mês" [ref=f10e232] [cursor=pointer]
+        - group "Visualização do calendário" [ref=f10e30]:
+          - button "Semana" [ref=f10e31] [cursor=pointer]
+          - button "Mês" [active] [pressed] [ref=f10e32] [cursor=pointer]
+        - generic [ref=f10e33]:
+          - generic [ref=f10e233]:
+            - generic [ref=f10e234]: Dom
+            - generic [ref=f10e235]: Seg
+            - generic [ref=f10e236]: Ter
+            - generic [ref=f10e237]: Qua
+            - generic [ref=f10e238]: Qui
+            - generic [ref=f10e239]: Sex
+            - generic [ref=f10e240]: Sáb
+          - grid "Calendário mensal" [ref=f10e241]:
+            - gridcell "sábado, 1 de agosto de 2026, sem eventos" [ref=f10e248] [cursor=pointer]:
+              - generic [ref=f10e249]: "1"
+            - gridcell "domingo, 2 de agosto de 2026, 1 eventos" [ref=f10e250] [cursor=pointer]:
+              - generic [ref=f10e251]: "2"
+            - gridcell "segunda-feira, 3 de agosto de 2026, sem eventos" [ref=f10e254] [cursor=pointer]:
+              - generic [ref=f10e255]: "3"
+            - gridcell "terça-feira, 4 de agosto de 2026, sem eventos" [ref=f10e256] [cursor=pointer]:
+              - generic [ref=f10e257]: "4"
+            - gridcell "quarta-feira, 5 de agosto de 2026, sem eventos" [ref=f10e258] [cursor=pointer]:
+              - generic [ref=f10e259]: "5"
+            - gridcell "quinta-feira, 6 de agosto de 2026, sem eventos" [ref=f10e260] [cursor=pointer]:
+              - generic [ref=f10e261]: "6"
+            - gridcell "sexta-feira, 7 de agosto de 2026, sem eventos" [ref=f10e262] [cursor=pointer]:
+              - generic [ref=f10e263]: "7"
+            - gridcell "sábado, 8 de agosto de 2026, sem eventos" [ref=f10e264] [cursor=pointer]:
+              - generic [ref=f10e265]: "8"
+            - gridcell "domingo, 9 de agosto de 2026, 4 eventos" [selected] [ref=f10e266] [cursor=pointer]:
+              - generic [ref=f10e38]: "9"
+            - gridcell "segunda-feira, 10 de agosto de 2026, sem eventos" [ref=f10e267] [cursor=pointer]:
+              - generic [ref=f10e45]: "10"
+            - gridcell "terça-feira, 11 de agosto de 2026, sem eventos" [ref=f10e268] [cursor=pointer]:
+              - generic [ref=f10e48]: "11"
+            - gridcell "quarta-feira, 12 de agosto de 2026, sem eventos" [ref=f10e269] [cursor=pointer]:
+              - generic [ref=f10e51]: "12"
+            - gridcell "quinta-feira, 13 de agosto de 2026, sem eventos" [ref=f10e270] [cursor=pointer]:
+              - generic [ref=f10e54]: "13"
+            - gridcell "sexta-feira, 14 de agosto de 2026, sem eventos" [ref=f10e271] [cursor=pointer]:
+              - generic [ref=f10e57]: "14"
+            - gridcell "sábado, 15 de agosto de 2026, sem eventos" [ref=f10e272] [cursor=pointer]:
+              - generic [ref=f10e60]: "15"
+            - gridcell "domingo, 16 de agosto de 2026, 1 eventos" [ref=f10e273] [cursor=pointer]:
+              - generic [ref=f10e274]: "16"
+            - gridcell "segunda-feira, 17 de agosto de 2026, sem eventos" [ref=f10e277] [cursor=pointer]:
+              - generic [ref=f10e278]: "17"
+            - gridcell "terça-feira, 18 de agosto de 2026, sem eventos" [ref=f10e279] [cursor=pointer]:
+              - generic [ref=f10e280]: "18"
+            - gridcell "quarta-feira, 19 de agosto de 2026, sem eventos" [ref=f10e281] [cursor=pointer]:
+              - generic [ref=f10e282]: "19"
+            - gridcell "quinta-feira, 20 de agosto de 2026, sem eventos" [ref=f10e283] [cursor=pointer]:
+              - generic [ref=f10e284]: "20"
+            - gridcell "sexta-feira, 21 de agosto de 2026, sem eventos" [ref=f10e285] [cursor=pointer]:
+              - generic [ref=f10e286]: "21"
+            - gridcell "sábado, 22 de agosto de 2026, sem eventos" [ref=f10e287] [cursor=pointer]:
+              - generic [ref=f10e288]: "22"
+            - gridcell "domingo, 23 de agosto de 2026, 1 eventos" [ref=f10e289] [cursor=pointer]:
+              - generic [ref=f10e290]: "23"
+            - gridcell "segunda-feira, 24 de agosto de 2026, sem eventos" [ref=f10e293] [cursor=pointer]:
+              - generic [ref=f10e294]: "24"
+            - gridcell "terça-feira, 25 de agosto de 2026, sem eventos" [ref=f10e295] [cursor=pointer]:
+              - generic [ref=f10e296]: "25"
+            - gridcell "quarta-feira, 26 de agosto de 2026, sem eventos" [ref=f10e297] [cursor=pointer]:
+              - generic [ref=f10e298]: "26"
+            - gridcell "quinta-feira, 27 de agosto de 2026, sem eventos" [ref=f10e299] [cursor=pointer]:
+              - generic [ref=f10e300]: "27"
+            - gridcell "sexta-feira, 28 de agosto de 2026, sem eventos" [ref=f10e301] [cursor=pointer]:
+              - generic [ref=f10e302]: "28"
+            - gridcell "sábado, 29 de agosto de 2026, sem eventos" [ref=f10e303] [cursor=pointer]:
+              - generic [ref=f10e304]: "29"
+            - gridcell "domingo, 30 de agosto de 2026, 1 eventos" [ref=f10e305] [cursor=pointer]:
+              - generic [ref=f10e306]: "30"
+            - gridcell "segunda-feira, 31 de agosto de 2026, sem eventos" [ref=f10e309] [cursor=pointer]:
+              - generic [ref=f10e310]: "31"
+      - region [ref=f10e63]:
+        - generic [ref=f10e65]:
+          - paragraph [ref=f10e66]: 4 eventos
+          - heading "Domingo, 09 de agosto" [level=2] [ref=f10e67]
+        - generic "Eventos da data selecionada" [ref=f10e68]:
+          - article [ref=f10e69]:
+            - time [ref=f10e73]: 09:00
+            - generic [ref=f10e74]:
+              - heading "Santa Missa" [level=3] [ref=f10e76]
+              - paragraph [ref=f10e77]:
+                - generic [ref=f10e81]: Igreja Matriz
+              - generic [ref=f10e82]:
+                - generic [ref=f10e83]: 09:00 - 10:00
+                - generic [ref=f10e87]: Semanal
+            - generic [ref=f10e93]:
+              - button "Editar Santa Missa" [ref=f10e94] [cursor=pointer]:
+                - generic [ref=f10e98]: Editar
+              - button "Duplicar Santa Missa" [ref=f10e99] [cursor=pointer]:
+                - generic [ref=f10e103]: Duplicar
+              - button "Excluir Santa Missa" [ref=f10e104] [cursor=pointer]:
+                - generic [ref=f10e108]: Excluir
+          - article [ref=f10e109]:
+            - time [ref=f10e113]: 18:00
+            - generic [ref=f10e114]:
+              - heading "Terço dos Homens" [level=3] [ref=f10e116]
+              - paragraph [ref=f10e117]:
+                - generic [ref=f10e121]: Igreja Matriz
+              - generic [ref=f10e122]: 18:00 - 18:40
+            - generic [ref=f10e127]:
+              - button "Editar Terço dos Homens" [ref=f10e128] [cursor=pointer]:
+                - generic [ref=f10e132]: Editar
+              - button "Duplicar Terço dos Homens" [ref=f10e133] [cursor=pointer]:
+                - generic [ref=f10e137]: Duplicar
+              - button "Excluir Terço dos Homens" [ref=f10e138] [cursor=pointer]:
+                - generic [ref=f10e142]: Excluir
+          - article [ref=f10e143]:
+            - time [ref=f10e147]: 18:00
+            - generic [ref=f10e148]:
+              - heading "Santa Missa" [level=3] [ref=f10e150]
+              - paragraph [ref=f10e151]:
+                - generic [ref=f10e155]: Capela N. Sra. de Fátima, Ponta da Serra
+              - generic [ref=f10e156]: 18:00 - 18:40
+            - generic [ref=f10e161]:
+              - button "Editar Santa Missa" [ref=f10e162] [cursor=pointer]:
+                - generic [ref=f10e166]: Editar
+              - button "Duplicar Santa Missa" [ref=f10e167] [cursor=pointer]:
+                - generic [ref=f10e171]: Duplicar
+              - button "Excluir Santa Missa" [ref=f10e172] [cursor=pointer]:
+                - generic [ref=f10e176]: Excluir
+          - article [ref=f10e177]:
+            - time [ref=f10e181]: 19:00
+            - generic [ref=f10e182]:
+              - heading "Santa Missa" [level=3] [ref=f10e184]
+              - paragraph [ref=f10e185]:
+                - generic [ref=f10e189]: Igreja Matriz
+              - generic [ref=f10e190]: 19:00 - 19:40
+            - generic [ref=f10e195]:
+              - button "Editar Santa Missa" [ref=f10e196] [cursor=pointer]:
+                - generic [ref=f10e200]: Editar
+              - button "Duplicar Santa Missa" [ref=f10e201] [cursor=pointer]:
+                - generic [ref=f10e205]: Duplicar
+              - button "Excluir Santa Missa" [ref=f10e206] [cursor=pointer]:
+                - generic [ref=f10e210]: Excluir
+  - navigation "Navegação administrativa principal" [ref=f10e211]:
+    - generic [ref=f10e212]:
+      - link "Início" [ref=f10e213] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f10e220] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f10e224] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f10e228] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

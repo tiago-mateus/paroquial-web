@@ -1,0 +1,65 @@
+- generic [ref=f18e4]:
+  - banner [ref=f18e5]:
+    - generic [ref=f18e6]:
+      - paragraph [ref=f18e7]: Paroquial admin
+      - strong [ref=f18e8]: Conteúdo
+    - link "Ver site público" [ref=f18e9] [cursor=pointer]:
+      - /url: /sao-jose
+  - main [ref=f18e14]:
+    - generic [ref=f18e15]:
+      - generic [ref=f18e16]:
+        - generic [ref=f18e17]:
+          - button "Destaques" [ref=f18e18] [cursor=pointer]
+          - button "Canais oficiais" [ref=f18e19] [cursor=pointer]
+          - button "Página inicial" [ref=f18e20] [cursor=pointer]
+          - button "Novo destaque" [ref=f18e21] [cursor=pointer]
+        - generic [ref=f18e23]:
+          - generic [ref=f18e25]:
+            - heading "Destaques publicados" [level=2] [ref=f18e26]
+            - paragraph [ref=f18e27]: Comunicados que aparecem no carrossel da página inicial
+          - generic [ref=f18e28]:
+            - button "Festa do Padroeiro Programacao especial durante toda a semana." [ref=f18e29] [cursor=pointer]:
+              - generic [ref=f18e33]:
+                - strong [ref=f18e34]: Festa do Padroeiro
+                - generic [ref=f18e35]: Programacao especial durante toda a semana.
+            - button "Campanha do Agasalho Doe roupas em bom estado na secretaria paroquial." [ref=f18e40] [cursor=pointer]:
+              - generic [ref=f18e44]:
+                - strong [ref=f18e45]: Campanha do Agasalho
+                - generic [ref=f18e46]: Doe roupas em bom estado na secretaria paroquial.
+      - dialog [ref=f18e72]:
+        - generic [ref=f18e73]:
+          - generic [ref=f18e74]:
+            - paragraph [ref=f18e75]: Página inicial
+            - heading "Editar destaque" [level=2] [ref=f18e76]
+          - button "Fechar editor" [active] [ref=f18e77] [cursor=pointer]
+        - generic [ref=f18e82]:
+          - generic [ref=f18e83]:
+            - text: Título
+            - textbox "Título" [ref=f18e84]: Festa do Padroeiro
+          - generic [ref=f18e85]:
+            - text: Mensagem
+            - textbox "Mensagem" [ref=f18e86]: Programacao especial durante toda a semana.
+          - generic [ref=f18e87]:
+            - text: Imagem
+            - textbox "Imagem" [ref=f18e88]:
+              - /placeholder: https://...
+          - generic [ref=f18e89]:
+            - text: Link
+            - textbox "Link" [ref=f18e90]: https://paroquial.local
+          - generic [ref=f18e91]:
+            - text: Ordem
+            - spinbutton "Ordem" [ref=f18e92]: "0"
+        - generic [ref=f18e93]:
+          - button "Excluir" [ref=f18e94] [cursor=pointer]
+          - button "Cancelar" [ref=f18e98] [cursor=pointer]
+          - button "Salvar alterações" [ref=f18e99] [cursor=pointer]
+  - navigation "Navegação administrativa principal" [ref=f18e51]:
+    - generic [ref=f18e52]:
+      - link "Início" [ref=f18e53] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f18e60] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f18e64] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f18e68] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

@@ -1,0 +1,119 @@
+[     812ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[    1058ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[    1058ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[    1058ms] [LOG] Worker script URL: http://localhost:5173/mockServiceWorker.js @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[    1058ms] [LOG] Worker scope: http://localhost:5173/ @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[    1058ms] [LOG] Client ID: %s (%s) 615ece0a-d99f-4ef1-ab7f-07e89d99695d top-level @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[    1411ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1412ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1412ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: {"id":"00000000-0000-0000-0000-000000000101","slug…me":"11:00"}],"theme":{"primaryColor":"#2563eb"}}} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1413ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1413ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1413ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"link-site","title":"Site oficial","url":"p…nge","variant":"pill","order":7,"isActive":true}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1458ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1459ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1459ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000202","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[    1462ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[    1462ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[    1462ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  118721ms] [ERROR] Error handled by React Router default ErrorBoundary: ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11766:189) @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=972d8c93:6547
+[  118722ms] [ERROR] Error handled by React Router default ErrorBoundary: ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11766:189) @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=972d8c93:6547
+[  118725ms] [ERROR] Error handled by React Router default ErrorBoundary: ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11827:37) @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=972d8c93:6547
+[  118726ms] [ERROR] Error handled by React Router default ErrorBoundary: ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11827:37) @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=972d8c93:6547
+[  118728ms] [ERROR] %o
+
+%s
+
+%s
+ ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11827:37) The above error occurred in the <AdminDashboardPage> component. React will try to recreate this component tree from scratch using the error boundary you provided, RenderErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7000
+[  118729ms] [ERROR] React Router caught the following error during render ReferenceError: getTodayStatus is not defined
+    at AdminDashboardPage (http://localhost:5173/src/features/admin/AdminDashboardPage.tsx?t=1786069809942:52:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:18509:20)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:5654:24)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:7475:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:8525:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:997:72)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12561:98)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12424:43)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:12408:13)
+    at performWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:11827:37) @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=972d8c93:6586
+[  164291ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  164291ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  164292ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: {"id":"00000000-0000-0000-0000-000000000101","slug…me":"11:00"}],"theme":{"primaryColor":"#2563eb"}}} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  164292ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  164292ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  164292ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"link-site","title":"Site oficial","url":"p…nge","variant":"pill","order":7,"isActive":true}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  164343ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  164343ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  164343ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000202","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  164344ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  164344ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  164344ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  181389ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=972d8c93:20102
+[  181517ms] [LOG] %cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3705
+[  181517ms] [LOG] Found an issue? https://github.com/mswjs/msw/issues @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3710
+[  181517ms] [LOG] Worker script URL: http://localhost:5173/mockServiceWorker.js @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3711
+[  181517ms] [LOG] Worker scope: http://localhost:5173/ @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3712
+[  181517ms] [LOG] Client ID: %s (%s) e06e49a7-797f-4591-9462-14fc95285e32 top-level @ http://localhost:5173/node_modules/.vite/deps/msw_browser.js?v=972d8c93:3714
+[  181833ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  181833ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  181833ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: {"id":"00000000-0000-0000-0000-000000000101","slug…me":"11:00"}],"theme":{"primaryColor":"#2563eb"}}} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  181835ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  181835ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  181835ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"link-site","title":"Site oficial","url":"p…nge","variant":"pill","order":7,"isActive":true}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  181882ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  181882ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  181882ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"00000000-0000-0000-0000-000000000202","sou…"repeatUntil":"2026-12-31","repeatWeekdays":[0]}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553
+[  181884ms] [LOG] Request {url: URL, method: GET, headers: Object, body: } @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:551
+[  181885ms] [LOG] Handler: HttpHandler @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:552
+[  181885ms] [LOG] Response {status: 200, statusText: OK, headers: Object, body: [{"id":"church-sj-santissimo","tenantId":"00000000…0","telefone":"(11) 99999-9999","tipo":"matriz"}]} @ http://localhost:5173/node_modules/.vite/deps/msw.js?v=972d8c93:553

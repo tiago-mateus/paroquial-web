@@ -1,0 +1,119 @@
+- generic [ref=f50e4]:
+  - banner [ref=f50e5]:
+    - generic [ref=f50e6]:
+      - paragraph [ref=f50e7]: Paroquial admin
+      - strong [ref=f50e8]: Visão geral
+    - link "Ver site público" [ref=f50e9] [cursor=pointer]:
+      - /url: /sao-jose
+  - main [ref=f50e14]:
+    - generic [ref=f50e16]:
+      - region [ref=f50e17]:
+        - generic [ref=f50e18]:
+          - paragraph [ref=f50e19]: quinta-feira, 06 de agosto
+          - generic [ref=f50e20]:
+            - generic [ref=f50e21]:
+              - heading "Paróquia Santo Antônio de Pádua" [level=1] [ref=f50e22]
+              - paragraph [ref=f50e23]: 3 eventos concluídos hoje
+            - link "Criar evento hoje" [ref=f50e24] [cursor=pointer]:
+              - /url: /sao-jose/admin/calendario?date=2026-08-06&action=new
+        - link "Próximo compromisso Santa Missa domingo, 09 de ago. · 09:00 · Igreja Matriz" [ref=f50e27] [cursor=pointer]:
+          - /url: /sao-jose/admin/calendario?date=2026-08-09
+          - generic [ref=f50e31]:
+            - generic [ref=f50e32]: Próximo compromisso
+            - strong [ref=f50e33]: Santa Missa
+            - generic [ref=f50e34]: domingo, 09 de ago. · 09:00 · Igreja Matriz
+      - generic [ref=f50e37]:
+        - generic [ref=f50e38]:
+          - region [ref=f50e39]:
+            - generic [ref=f50e40]:
+              - generic [ref=f50e41]:
+                - heading "Programação de hoje" [level=2] [ref=f50e42]
+                - paragraph [ref=f50e43]: Celebrações e atividades do dia
+              - link "Ver agenda" [ref=f50e44] [cursor=pointer]:
+                - /url: /sao-jose/admin/calendario?date=2026-08-06
+            - generic [ref=f50e47]:
+              - link "18:00 Terço dos Homens Igreja Matriz · Encontro" [ref=f50e48] [cursor=pointer]:
+                - /url: /sao-jose/admin/calendario?date=2026-08-06
+                - time [ref=f50e49]: 18:00
+                - generic [ref=f50e50]:
+                  - strong [ref=f50e52]: Terço dos Homens
+                  - generic [ref=f50e53]:
+                    - generic [ref=f50e57]: Igreja Matriz
+                    - generic [ref=f50e58]: · Encontro
+              - link "18:00 Santa Missa Capela N. Sra. de Fátima, Ponta da Serra · Adoração" [ref=f50e61] [cursor=pointer]:
+                - /url: /sao-jose/admin/calendario?date=2026-08-06
+                - time [ref=f50e62]: 18:00
+                - generic [ref=f50e63]:
+                  - strong [ref=f50e65]: Santa Missa
+                  - generic [ref=f50e66]:
+                    - generic [ref=f50e70]: Capela N. Sra. de Fátima, Ponta da Serra
+                    - generic [ref=f50e71]: · Adoração
+              - link "19:00 Santa Missa Igreja Matriz · Adoração" [ref=f50e74] [cursor=pointer]:
+                - /url: /sao-jose/admin/calendario?date=2026-08-06
+                - time [ref=f50e75]: 19:00
+                - generic [ref=f50e76]:
+                  - strong [ref=f50e78]: Santa Missa
+                  - generic [ref=f50e79]:
+                    - generic [ref=f50e83]: Igreja Matriz
+                    - generic [ref=f50e84]: · Adoração
+          - region [ref=f50e87]:
+            - generic [ref=f50e88]:
+              - heading "Visão rápida" [level=2] [ref=f50e89]
+              - paragraph [ref=f50e90]: Conteúdo disponível para a comunidade
+            - generic [ref=f50e91]:
+              - link "4 Próximos 7 dias" [ref=f50e92] [cursor=pointer]:
+                - /url: /sao-jose/admin/calendario
+                - strong [ref=f50e96]: "4"
+                - generic [ref=f50e97]: Próximos 7 dias
+              - link "4 Igrejas" [ref=f50e98] [cursor=pointer]:
+                - /url: /sao-jose/admin/igrejas
+                - strong [ref=f50e104]: "4"
+                - generic [ref=f50e105]: Igrejas
+              - link "7 Links ativos" [ref=f50e106] [cursor=pointer]:
+                - /url: /sao-jose/links
+                - strong [ref=f50e111]: "7"
+                - generic [ref=f50e112]: Links ativos
+        - complementary [ref=f50e113]:
+          - region [ref=f50e114]:
+            - generic [ref=f50e115]:
+              - heading "Pendências" [level=2] [ref=f50e116]
+              - paragraph [ref=f50e117]: Itens que afetam a publicação
+            - link "2 igrejas sem imagem Complete a apresentação dos locais" [ref=f50e119] [cursor=pointer]:
+              - /url: /sao-jose/admin/igrejas
+              - generic [ref=f50e123]:
+                - strong [ref=f50e124]: 2 igrejas sem imagem
+                - generic [ref=f50e125]: Complete a apresentação dos locais
+          - region [ref=f50e128]:
+            - generic [ref=f50e129]:
+              - heading "Tarefas rápidas" [level=2] [ref=f50e130]
+              - paragraph [ref=f50e131]: Ações frequentes da administração
+            - link "Atualizar paróquia Identidade e contatos" [ref=f50e132] [cursor=pointer]:
+              - /url: /sao-jose/admin/paroquia
+              - generic [ref=f50e137]:
+                - strong [ref=f50e138]: Atualizar paróquia
+                - generic [ref=f50e139]: Identidade e contatos
+            - link "Cadastrar igreja Locais da comunidade" [ref=f50e142] [cursor=pointer]:
+              - /url: /sao-jose/admin/igrejas
+              - generic [ref=f50e148]:
+                - strong [ref=f50e149]: Cadastrar igreja
+                - generic [ref=f50e150]: Locais da comunidade
+            - link "Gerenciar conteúdo Destaques e links" [ref=f50e153] [cursor=pointer]:
+              - /url: /sao-jose/admin/conteudo
+              - generic [ref=f50e157]:
+                - strong [ref=f50e158]: Gerenciar conteúdo
+                - generic [ref=f50e159]: Destaques e links
+            - link "Revisar horários Missas e atendimentos" [ref=f50e162] [cursor=pointer]:
+              - /url: /sao-jose/admin/horarios
+              - generic [ref=f50e168]:
+                - strong [ref=f50e169]: Revisar horários
+                - generic [ref=f50e170]: Missas e atendimentos
+  - navigation "Navegação administrativa principal" [ref=f50e173]:
+    - generic [ref=f50e174]:
+      - link "Início" [ref=f50e175] [cursor=pointer]:
+        - /url: /sao-jose/admin
+      - link "Agenda" [ref=f50e182] [cursor=pointer]:
+        - /url: /sao-jose/admin/calendario
+      - link "Conteúdo" [ref=f50e186] [cursor=pointer]:
+        - /url: /sao-jose/admin/conteudo
+      - link "Mais" [ref=f50e190] [cursor=pointer]:
+        - /url: /sao-jose/admin/mais

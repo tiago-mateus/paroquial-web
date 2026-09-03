@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import type { CalendarEvent } from "../../shared/api/events";
 import { getTenantEvents } from "../../shared/api/events";
+import { getTenant } from "../../shared/api/tenants";
 import { ErrorState } from "../../shared/components/PageState";
+import { PublicDesktopNavigation } from "../../shared/components/PublicNavigation";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { AgendaDayTimeline } from "./AgendaDayTimeline";
 import { AgendaEventDetails } from "./AgendaEventDetails";
 import { Agenda } from "./components/Agenda";
@@ -30,6 +33,8 @@ export function PublicCalendarPage() {
   const monthEnd = toDateKey(endOfMonth(displayedMonth));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isMonthExpanded, setIsMonthExpanded] = useState(false);
+  const tenantQuery = useQuery({ queryKey: ["tenant", tenantSlug], queryFn: () => getTenant(tenantSlug), enabled: Boolean(tenantSlug) });
+  useDocumentTitle("Agenda", tenantQuery.data?.name);
 
   useEffect(() => {
     if (dateParam === toDateKey(selectedDate)) return;
@@ -53,21 +58,15 @@ export function PublicCalendarPage() {
   return (
     <main className="min-h-dvh max-w-none bg-white p-0 text-slate-950 md:bg-stone-50">
       <header className="hidden border-b border-slate-200/70 bg-white md:block">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            to={`/${tenantSlug}`}
-            aria-label="Voltar ao início"
-            className="grid h-10 w-10 flex-none place-items-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <span className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-amber-100 text-amber-800">
-            <CalendarDays size={19} />
-          </span>
-          <div className="min-w-0">
-            <p className="m-0 text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-amber-700">Programação paroquial</p>
-            <h1 className="m-0 text-xl font-bold leading-tight">Agenda</h1>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-amber-100 text-amber-800"><CalendarDays size={19} /></span>
+            <div className="min-w-0">
+              <p className="m-0 truncate text-[0.65rem] font-bold text-amber-700">{tenantQuery.data?.name ?? "Paroquial"}</p>
+              <h1 className="m-0 text-xl font-bold leading-tight">Agenda</h1>
+            </div>
           </div>
+          <PublicDesktopNavigation tenantSlug={tenantSlug} />
         </div>
       </header>
 

@@ -11,7 +11,7 @@ export const churches: MockChurch[] = [
     endereco: "Rua Exemplo, 123 · Centro",
     latitude: -23.55052,
     longitude: -46.633308,
-    urlImg: "https://images.unsplash.com/photo-1548625361-ec429c1f6bd8?auto=format&fit=crop&w=500&q=80",
+    urlImg: "",
     telefone: "(11) 99999-9999",
     tipo: "matriz",
   },

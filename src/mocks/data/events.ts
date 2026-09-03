@@ -52,10 +52,10 @@ export const events: CalendarEvent[] = [
     repeat: "none",
     repeatWeekdays: [],
   },
-   {
-    id: "00000000-0000-0000-0000-000000000204",
-    sourceId: "00000000-0000-0000-0000-000000000204",
-    occurrenceId: `00000000-0000-0000-0000-000000000204-${todayDate.replaceAll("-", "")}1800`,
+  {
+    id: "00000000-0000-0000-0000-000000000205",
+    sourceId: "00000000-0000-0000-0000-000000000205",
+    occurrenceId: `00000000-0000-0000-0000-000000000205-${todayDate.replaceAll("-", "")}1800`,
     tenantSlug: "sao-jose",
     title: "Santa Missa",
     description: "Oracao comunitaria",

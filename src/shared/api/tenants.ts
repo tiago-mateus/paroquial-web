@@ -43,3 +43,12 @@ export type Tenant = {
 export function getTenant(tenantSlug: string) {
   return apiFetch<Tenant>(`/api/v1/tenants/${tenantSlug}`);
 }
+
+export type UpdateTenantRequest = Pick<Tenant, "name" | "contato" | "telefone" | "endereco" | "cidade" | "estado" | "homeHeader" | "homeActions" | "confessionSchedule">;
+
+export function updateTenant(tenantSlug: string, input: UpdateTenantRequest) {
+  return apiFetch<Tenant>(`/api/v1/admin/tenants/${tenantSlug}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}

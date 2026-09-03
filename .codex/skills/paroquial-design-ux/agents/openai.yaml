@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paroquial Design & UX"
+  short_description: "Especialista visual e de experiencia do Paroquial"
+  default_prompt: "Use $paroquial-design-ux para revisar e melhorar esta tela do Paroquial."

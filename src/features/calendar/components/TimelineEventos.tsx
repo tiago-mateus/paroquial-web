@@ -47,7 +47,7 @@ export function TimelineEventos({
 
   return (
     <div
-      className={classNames('relative overflow-hidden rounded-[1.2rem] bg-white')}
+      className={classNames('relative overflow-hidden bg-white md:rounded-[1.2rem]')}
     >
       <span
         aria-hidden="true"
@@ -63,7 +63,7 @@ export function TimelineEventos({
         const finished = hasEventFinished(event, now);
         const location =
           event.location?.trim() || (isAdmin ? 'Local a definir' : 'Local a confirmar');
-        const statusLabel = highlighted ? (happeningNow ? 'Agora' : 'Próximo') : null;
+        const statusLabel = highlighted ? (happeningNow ? 'Agora' : 'Próximo') : finished && isEditorial ? 'Encerrado' : null;
         const ariaLabel = [
           selectActionLabel,
           eventTypeLabels[event.type],
@@ -75,14 +75,15 @@ export function TimelineEventos({
           .filter(Boolean)
           .join(', ');
         const className = classNames(
-          'group relative m-0 grid min-h-[4.75rem] w-full items-stretch gap-x-2 rounded-xl border-0 py-3.5 pl-0 pr-2 text-left transition-[transform,background-color,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500/35',
+              'group relative m-0 grid w-full items-stretch gap-x-2 rounded-xl border-0 pl-0 pr-1 text-left transition-[transform,background-color,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500/35',
+          isAdmin ? 'min-h-[4.25rem] py-2.5 sm:min-h-[4.75rem] sm:py-3.5' : 'min-h-[4.75rem] py-3.5',
           isEditorial ? 'active:scale-[0.995] active:bg-slate-50' : '',
           isHome
             ? 'grid-cols-[2.25rem_3.25rem_minmax(0,1fr)_1rem]'
             : isEditorial
               ? 'grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_1rem] sm:grid-cols-[3rem_4rem_minmax(0,1fr)_1rem] sm:gap-x-3'
-              : 'grid-cols-[2.5rem_3.5rem_1px_minmax(0,1fr)_auto] sm:grid-cols-[3rem_4rem_1px_minmax(0,1fr)_auto] sm:gap-x-3',
-          isEditorial && finished && !highlighted ? 'opacity-55' : '',
+              : 'grid-cols-[2.5rem_3.25rem_minmax(0,1fr)_2.5rem] sm:grid-cols-[3rem_4rem_1px_minmax(0,1fr)_auto] sm:gap-x-3',
+          isEditorial && finished && !highlighted ? 'opacity-75' : '',
           isAdmin
             ? 'text-slate-950 hover:bg-stone-50/80'
             : highlighted
@@ -96,7 +97,7 @@ export function TimelineEventos({
             <span
               className={classNames(
                 'relative z-10 flex justify-center',
-                isEditorial ? 'items-center' : 'items-start pt-4',
+                isEditorial ? 'items-center' : 'items-center sm:items-start sm:pt-4',
               )}
               aria-hidden="true"
             >
@@ -113,19 +114,23 @@ export function TimelineEventos({
               <time
                 className={classNames(
                   'whitespace-nowrap font-bold leading-6 tracking-[-0.01em]',
-                  isEditorial ? 'text-sm' : 'text-md',
+                  isEditorial ? 'text-sm' : 'text-sm sm:text-md',
                 )}
                 dateTime={event.start}
               >
                 {formatEventTime(event.start)}
               </time>
             </span>
-            {isAdmin ? <span aria-hidden="true" className="h-full min-h-12 w-px bg-slate-200" /> : null}
+            {isAdmin ? <span aria-hidden="true" className="hidden h-full min-h-12 w-px bg-slate-200 sm:block" /> : null}
             <span className="min-w-0 self-center">
               {isEditorial && statusLabel ? (
                 <small className={classNames(
                   'mb-1 inline-flex rounded-full px-1.5 py-0.5 text-[0.52rem] font-extrabold uppercase tracking-[0.08em]',
-                  happeningNow ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-800',
+                  happeningNow
+                    ? 'bg-amber-500 text-white'
+                    : finished
+                      ? 'bg-slate-100 text-slate-500'
+                      : 'bg-amber-100 text-amber-800',
                 )}>
                   {statusLabel}
                 </small>
@@ -134,7 +139,7 @@ export function TimelineEventos({
                 <strong
                   className={classNames(
                     'm-0 block min-w-0 font-bold leading-snug',
-                    isEditorial ? 'line-clamp-2 text-base' : 'text-lg',
+                    isEditorial ? 'line-clamp-2 text-base' : 'line-clamp-2 text-base sm:text-lg',
                   )}
                 >
                   {event.title}
@@ -197,6 +202,22 @@ export function TimelineEventos({
               <Link to={getHref(event)} aria-label={ariaLabel} className={className}>
                 {content}
               </Link>
+            ) : isAdmin ? (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelect?.(event)}
+                onKeyDown={(keyboardEvent) => {
+                  if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                    keyboardEvent.preventDefault();
+                    onSelect?.(event);
+                  }
+                }}
+                aria-label={ariaLabel}
+                className={className}
+              >
+                {content}
+              </div>
             ) : (
               <button
                 type="button"

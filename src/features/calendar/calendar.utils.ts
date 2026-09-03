@@ -48,6 +48,36 @@ export function getMondayFirstOffset(date: Date) {
   return (startOfMonth(date).getDay() + 6) % 7;
 }
 
+export type MonthCell = { date: Date; adjacent: boolean };
+
+/** Retorna as células do grid mensal começando na segunda-feira,
+ *  preenchendo com dias do mês anterior e próximo nas bordas. */
+export function getMonthGrid(date: Date): MonthCell[] {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  // Offset seg=0 … dom=6
+  const leadingCount = (firstDay.getDay() + 6) % 7;
+  const trailingCount = (7 - ((leadingCount + lastDay.getDate()) % 7)) % 7;
+
+  const leading: MonthCell[] = Array.from({ length: leadingCount }, (_, i) => ({
+    date: addDays(firstDay, -(leadingCount - i)),
+    adjacent: true,
+  }));
+  const current: MonthCell[] = Array.from({ length: lastDay.getDate() }, (_, i) => ({
+    date: new Date(year, month, i + 1),
+    adjacent: false,
+  }));
+  const trailing: MonthCell[] = Array.from({ length: trailingCount }, (_, i) => ({
+    date: addDays(lastDay, i + 1),
+    adjacent: true,
+  }));
+
+  return [...leading, ...current, ...trailing];
+}
+
 export function isSameDay(first: Date, second: Date) {
   return toDateKey(first) === toDateKey(second);
 }

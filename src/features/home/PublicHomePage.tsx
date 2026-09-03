@@ -2,11 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getTenantBanners } from "../../shared/api/banners";
+import { getTenantChurches } from "../../shared/api/churches";
 import { getTenantEvents } from "../../shared/api/events";
 import { getTodayLiturgy } from "../../shared/api/liturgy";
 import { getTenant } from "../../shared/api/tenants";
+import { getBrazilianWhatsappHref } from "../../shared/lib/phone";
 import { ErrorState, LoadingState } from "../../shared/components/PageState";
 import { SectionHeading } from "../../shared/components/SectionHeading";
+import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
+import { getEventsForDate } from "../calendar/calendar.utils";
 import { HomeBannerCarousel } from "./HomeBannerCarousel";
 import { HomeHeader } from "./HomeHeader";
 import { TodayEventsList } from "./TodayEventsList";
@@ -15,6 +19,8 @@ export function PublicHomePage() {
   const { tenantSlug = "" } = useParams();
   const today = new Date();
   const todayKey = toDateString(today);
+  const rangeEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+  const rangeEndKey = toDateString(rangeEnd);
   const tenantQuery = useQuery({
     queryKey: ["tenant", tenantSlug],
     queryFn: () => getTenant(tenantSlug),
@@ -25,15 +31,17 @@ export function PublicHomePage() {
     queryFn: () => getTenantBanners(tenantSlug),
     enabled: Boolean(tenantSlug),
   });
+  const churchesQuery = useQuery({ queryKey: ["churches", tenantSlug], queryFn: () => getTenantChurches(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
   const eventsQuery = useQuery({
-    queryKey: ["events", tenantSlug, todayKey, todayKey],
-    queryFn: () => getTenantEvents(tenantSlug, todayKey, todayKey),
+    queryKey: ["events", tenantSlug, todayKey, rangeEndKey],
+    queryFn: () => getTenantEvents(tenantSlug, todayKey, rangeEndKey),
     enabled: Boolean(tenantSlug),
   });
   const liturgyQuery = useQuery({
     queryKey: ["liturgy", todayKey],
     queryFn: getTodayLiturgy,
   });
+  useDocumentTitle("Início", tenantQuery.data?.name);
 
   if (tenantQuery.isLoading) return <HomeSkeleton title="Preparando a sua paróquia..." />;
 
@@ -47,13 +55,17 @@ export function PublicHomePage() {
 
   const tenant = tenantQuery.data;
   const cityLabel = [tenant.cidade, tenant.estado].filter(Boolean).join(" · ");
-  const contactValue = tenant.telefone || tenant.contato;
-  const contactHref = toWhatsappHref(contactValue);
+  const contactValue = tenant.telefone;
+  const contactHref = getBrazilianWhatsappHref(contactValue);
   const linksHref = `/${tenantSlug}/links`;
   const agendaHref = `/${tenantSlug}/calendario`;
   const sortedEvents = [...(eventsQuery.data ?? [])].sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   );
+  const todayEvents = getEventsForDate(sortedEvents, today);
+  const nextEvent = sortedEvents.find((event) => new Date(event.start) > today && !todayEvents.includes(event));
+  const fallbackImageUrl = churchesQuery.data?.find((church) => church.tipo === "matriz" && church.urlImg?.trim())?.urlImg
+    ?? churchesQuery.data?.find((church) => church.urlImg?.trim())?.urlImg;
 
   return (
     <main className="min-h-dvh max-w-none bg-white p-0 text-slate-900">
@@ -61,6 +73,7 @@ export function PublicHomePage() {
         tenantName={tenant.name}
         cidade={cityLabel}
         headerConfig={tenant.homeHeader}
+        fallbackImageUrl={fallbackImageUrl}
         homeActions={tenant.homeActions}
         linksHref={linksHref}
         agendaHref={agendaHref}
@@ -69,9 +82,9 @@ export function PublicHomePage() {
       />
 
       <section className="relative z-[2] mx-auto -mt-7 max-w-6xl px-0 sm:px-4 md:-mt-12">
-        <div className="min-h-[calc(100dvh-210px)] rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-5 shadow-[0_-18px_50px_rgb(15_23_42/0.13)] sm:rounded-[2rem] sm:px-6 md:p-8">
+        <div className="rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-5 shadow-[0_-18px_50px_rgb(15_23_42/0.13)] sm:rounded-[2rem] sm:px-6 md:p-8">
           <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.75fr)] lg:gap-10">
-            <div className="grid gap-4">
+            <div className="order-1 grid gap-4 lg:order-1">
               <SectionHeading
                 title="Destaques"
                 meta="da comunidade"
@@ -87,7 +100,7 @@ export function PublicHomePage() {
               )}
             </div>
 
-            <section className="grid gap-2" aria-labelledby="today-agenda-title">
+            <section className="order-1 grid gap-2 lg:order-2" aria-labelledby="today-agenda-title">
               <header className="flex items-start justify-between gap-4 px-1 pt-1">
                 <div className="min-w-0">
                   <p className="m-0 text-[0.68rem] font-extrabold uppercase tracking-[0.15em] text-amber-700">
@@ -119,11 +132,9 @@ export function PublicHomePage() {
               ) : eventsQuery.isError ? (
                 <ErrorState title="Não foi possível carregar a agenda" description="Tente novamente em instantes." />
               ) : (
-                <TodayEventsList events={sortedEvents} agendaHref={agendaHref} />
+                <TodayEventsList events={todayEvents} nextEvent={nextEvent} agendaHref={agendaHref} />
               )}
             </section>
-
-
           </div>
         </div>
       </section>
@@ -163,7 +174,7 @@ function TodayEventsSkeleton() {
 function HomeSkeleton({ title }: { title: string }) {
   return (
     <main className="min-h-dvh max-w-none bg-white p-0 text-slate-900">
-      <div className="min-h-[274px] animate-pulse bg-[linear-gradient(120deg,#78350f,#1f2937)] md:min-h-[360px]" />
+      <div className="min-h-[274px] animate-pulse bg-slate-800 md:min-h-[360px]" />
       <section className="relative z-[2] mx-auto -mt-7 max-w-6xl sm:px-4 md:-mt-12">
         <div className="min-h-[28rem] rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-7 shadow-[0_-18px_50px_rgb(15_23_42/0.13)] sm:rounded-[2rem] md:pb-7">
           <LoadingState title={title} />
@@ -171,11 +182,6 @@ function HomeSkeleton({ title }: { title: string }) {
       </section>
     </main>
   );
-}
-
-function toWhatsappHref(value?: string | null) {
-  const normalized = value?.replace(/\D/g, "");
-  return normalized ? `https://wa.me/${normalized}` : undefined;
 }
 
 function toDateString(date: Date) {
