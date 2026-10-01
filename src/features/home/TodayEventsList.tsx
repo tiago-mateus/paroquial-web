@@ -58,7 +58,7 @@ function NextEventLink({ event, agendaHref }: { event: CalendarEvent; agendaHref
   return (
     <Link
       to={`${agendaHref}?date=${event.start.slice(0, 10)}`}
-      className="mb-2 grid min-h-[4.75rem] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-3 rounded-xl bg-slate-950 px-3 py-3 text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+      className="mb-3 grid min-h-[4.75rem] grid-cols-[2.75rem_minmax(0,1fr)_1rem] items-center gap-3 rounded-[1.15rem] border border-slate-800 bg-slate-950 px-3 py-3 text-white shadow-[0_8px_22px_rgb(15_23_42/0.12)] transition hover:-translate-y-0.5 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
     >
       <span className="grid h-10 w-10 place-items-center rounded-lg bg-amber-300 text-slate-950"><CalendarClock size={18} /></span>
       <span className="min-w-0">

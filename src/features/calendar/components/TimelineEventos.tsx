@@ -47,7 +47,10 @@ export function TimelineEventos({
 
   return (
     <div
-      className={classNames('relative overflow-hidden bg-white md:rounded-[1.2rem]')}
+      className={classNames(
+        'relative overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white px-2 shadow-[0_6px_22px_rgb(15_23_42/0.045)] sm:px-3 md:px-4',
+        isHome ? 'rounded-[1.15rem] border-slate-100/90 px-2 shadow-[0_4px_18px_rgb(15_23_42/0.035)]' : '',
+      )}
     >
       <span
         aria-hidden="true"
@@ -74,8 +77,8 @@ export function TimelineEventos({
         ]
           .filter(Boolean)
           .join(', ');
-        const className = classNames(
-              'group relative m-0 grid w-full items-stretch gap-x-2 rounded-xl border-0 pl-0 pr-1 text-left transition-[transform,background-color,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500/35',
+          const className = classNames(
+              'group relative m-0 grid w-full items-stretch gap-x-2 rounded-xl border-0 px-2 text-left transition-[transform,background-color,opacity,box-shadow] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500/35 sm:px-3',
           isAdmin ? 'min-h-[4.25rem] py-2.5 sm:min-h-[4.75rem] sm:py-3.5' : 'min-h-[4.75rem] py-3.5',
           isEditorial ? 'active:scale-[0.995] active:bg-slate-50' : '',
           isHome
@@ -196,6 +199,7 @@ export function TimelineEventos({
               'relative z-10',
               isHome && index > 0 ? 'border-t border-slate-100/80' : '',
               index > 0 && isAdmin ? 'border-t border-slate-100' : '',
+              index > 0 && !isHome && !isAdmin ? 'border-t border-slate-100/80' : '',
             )}
           >
             {getHref ? (

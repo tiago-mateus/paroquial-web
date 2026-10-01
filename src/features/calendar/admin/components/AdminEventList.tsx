@@ -73,7 +73,7 @@ export function AdminEventList({ events, isFiltered = false, onEdit, onDuplicate
   }
 
   return (
-    <div className="bg-white px-5 md:overflow-hidden md:px-0" aria-label="Eventos da data selecionada">
+    <div className="overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white px-3 shadow-[0_6px_22px_rgb(15_23_42/0.045)] sm:px-4 md:px-0" aria-label="Eventos da data selecionada">
       {events.map((event, index) => {
         const location = event.location?.trim() || 'Local a definir';
         return (
