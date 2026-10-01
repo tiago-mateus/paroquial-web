@@ -48,8 +48,8 @@ export function TimelineEventos({
   return (
     <div
       className={classNames(
-        'relative overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white px-2 shadow-[0_6px_22px_rgb(15_23_42/0.045)] sm:px-3 md:px-4',
-        isHome ? 'rounded-[1.15rem] border-slate-100/90 px-2 shadow-[0_4px_18px_rgb(15_23_42/0.035)]' : '',
+        'relative overflow-hidden rounded-[1.1rem] border border-slate-200/80 bg-white px-1 shadow-[0_6px_22px_rgb(15_23_42/0.045)] sm:px-3 md:px-4',
+        isHome ? 'rounded-[1.1rem] border-slate-100/90 px-1 shadow-[0_4px_18px_rgb(15_23_42/0.035)]' : '',
       )}
     >
       <span
@@ -82,7 +82,7 @@ export function TimelineEventos({
           isAdmin ? 'min-h-[4.25rem] py-2.5 sm:min-h-[4.75rem] sm:py-3.5' : 'min-h-[4.75rem] py-3.5',
           isEditorial ? 'active:scale-[0.995] active:bg-slate-50' : '',
           isHome
-            ? 'grid-cols-[2.25rem_3.25rem_minmax(0,1fr)_1rem]'
+            ? 'grid-cols-[2rem_3.15rem_minmax(0,1fr)_1rem]'
             : isEditorial
               ? 'grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_1rem] sm:grid-cols-[3rem_4rem_minmax(0,1fr)_1rem] sm:gap-x-3'
               : 'grid-cols-[2.5rem_3.25rem_minmax(0,1fr)_2.5rem] sm:grid-cols-[3rem_4rem_1px_minmax(0,1fr)_auto] sm:gap-x-3',

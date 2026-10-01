@@ -77,7 +77,7 @@ export function AdminEventList({ events, isFiltered = false, onEdit, onDuplicate
       {events.map((event, index) => {
         const location = event.location?.trim() || 'Local a definir';
         return (
-          <article key={`${event.occurrenceId}-${event.start}-${index}`} className="relative grid min-h-[7.25rem] grid-cols-[3.4rem_1rem_minmax(0,1fr)_2.75rem] gap-x-2 border-b border-slate-100 py-5 last:border-b-0 md:min-h-0 md:grid-cols-[4rem_minmax(0,1fr)_auto] md:items-center md:gap-x-3 md:px-5 md:py-4">
+          <article key={`${event.occurrenceId}-${event.start}-${index}`} className="relative grid min-h-[6.75rem] grid-cols-[3.15rem_1rem_minmax(0,1fr)_2.5rem] gap-x-1.5 border-b border-slate-100 px-1 py-4 last:border-b-0 md:min-h-0 md:grid-cols-[4rem_minmax(0,1fr)_auto] md:items-center md:gap-x-3 md:px-5 md:py-4">
             <button
               type="button"
               onClick={() => setActionEvent(event)}
@@ -90,7 +90,7 @@ export function AdminEventList({ events, isFiltered = false, onEdit, onDuplicate
             </div>
 
             <span className="relative flex h-full justify-center md:hidden" aria-hidden="true">
-              <span className="absolute top-2 h-2.5 w-2.5 rounded-full bg-amber-600 ring-4 ring-amber-50 z-999" />
+              <span className="absolute top-2 z-10 h-2.5 w-2.5 rounded-full bg-amber-600 ring-4 ring-amber-50" />
               {index < events.length - 1 ? <span className="absolute bottom-[-1rem] top-4 w-px bg-slate-200 z-0" /> : null}
             </span>
 
