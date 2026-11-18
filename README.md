@@ -74,6 +74,10 @@ O `vercel.ts` usa o slug para encaminhar as rotas de perfil e canais ao backend.
 
 No painel, crie um canal e confirme a publicação em uma janela anônima. Em seguida, oculte o canal e confirme que ele aparece somente no painel. Para voltar aos mocks de perfil e canais, remova `VITE_PAROQUIAL_API_TENANT` e publique o frontend novamente.
 
+Para ativar a segunda fase, valide a migração `004` e as rotas públicas de igrejas e destaques no backend publicado. No frontend, use `VITE_PAROQUIAL_API_CHURCHES=true` e `VITE_PAROQUIAL_API_HIGHLIGHTS=true` para habilitar cada área separadamente no mesmo slug. As flags são lidas no build, por isso exigem outro deploy. A ativação de Destaques também passa a usar uma única requisição para salvar a ordem.
+
+No painel, cadastre uma igreja com e outra sem ponto no mapa e confira a listagem pública. Crie dois destaques, edite um deles, mude a ordem e recarregue a página inicial em uma janela anônima. Os registros do mock são dados de demonstração e ficam fora da migração.
+
 ## Tema e cores da paróquia
 
 Em Site → Tema e cores, selecione uma paleta pronta ou personalize as cores principal, de destaque e de fundo. As outras cores da interface acompanham a paleta, com validação de contraste antes de salvar.

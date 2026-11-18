@@ -11,7 +11,7 @@ import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useDragReorder } from "./useDragReorder";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { createTenantBanner, deleteTenantBanner, getTenantBanners, updateTenantBanner, type PublicHomeBanner, type UpsertBannerRequest } from "../../shared/api/banners";
+import { createTenantBanner, deleteTenantBanner, getTenantBanners, reorderTenantBanners, updateTenantBanner, type PublicHomeBanner, type UpsertBannerRequest } from "../../shared/api/banners";
 import { createTenantLink, deleteTenantLink, getAdminTenantLinks, updateTenantLink, type PublicLink, type UpsertLinkRequest } from "../../shared/api/links";
 import { getTenant, type HomeHeaderConfig } from "../../shared/api/tenants";
 import { HomeCoverEditor } from "./HomeCoverEditor";
@@ -89,10 +89,7 @@ export function AdminHighlightsPage() {
   const updateMutation = useMutation({ mutationFn: ({ id, input }: { id: string; input: UpsertBannerRequest }) => updateTenantBanner(tenantSlug, id, input), onSuccess: refresh });
   const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTenantBanner(tenantSlug, id), onSuccess: refresh });
   const reorderMutation = useMutation({
-    mutationFn: async (reordered: PublicHomeBanner[]) => {
-      const changed = reordered.map((banner, position) => ({ banner, position })).filter(({ banner, position }) => (banner.order ?? 0) !== position);
-      await Promise.all(changed.map(({ banner, position }) => updateTenantBanner(tenantSlug, banner.id, bannerRequest(banner, position))));
-    },
+    mutationFn: (reordered: PublicHomeBanner[]) => reorderTenantBanners(tenantSlug, reordered),
     onMutate: async (reordered) => {
       await queryClient.cancelQueries({ queryKey: ["banners", tenantSlug] });
       const previous = queryClient.getQueryData<PublicHomeBanner[]>(["banners", tenantSlug]);
