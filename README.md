@@ -58,7 +58,21 @@ Gere o segredo com node -e "console.log(require('node:crypto').randomBytes(32).t
 
 A função de login é necessária mesmo sem banco. Uma hospedagem que entrega somente dist/ executa o formulário, mas não autentica o painel. Enquanto faltarem as variáveis do servidor, o painel fica fechado. Os dados do site e do painel são fictícios e carregados por MSW. As alterações no painel existem apenas durante a sessão da página e podem ser perdidas ao recarregar. Não use esses dados para cadastrar informações privadas.
 
-Quando o backend estiver pronto, defina VITE_LAUNCH_MODE=false e aponte VITE_API_URL para o backend para retomar o fluxo original.
+### Ativar o paroquial-api na Vercel
+
+Publique o NestJS no projeto Vercel próprio `paroquial-api`. No backend, configure `DATABASE_URL` com a conexão do pool do Neon e `FRONTEND_SESSION_ORIGIN` com a origem HTTPS do frontend. Use a conexão direta `DATABASE_URL_UNPOOLED` em `paroquial-api/.env` para rodar as migrations e provisionar a paróquia com o mesmo slug de `PAROQUIAL_ADMIN_TENANT`. A API deve responder `200` em `/api/v1/health/ready` e em `/api/v1/tenants/<slug>` antes de ativar o frontend.
+
+No projeto Vercel `paroquial-web`, configure estas variáveis no ambiente do deploy e publique o frontend novamente.
+
+| Variável | Valor |
+| --- | --- |
+| `VITE_LAUNCH_MODE` | `true` |
+| `VITE_PAROQUIAL_API_TENANT` | Slug cadastrado na API e autorizado na sessão |
+| `PAROQUIAL_API_ORIGIN` | URL pública do backend, começando com `https://` |
+
+O `vercel.ts` usa o slug para encaminhar as rotas de perfil e canais ao backend. O navegador continua chamando o domínio do frontend e envia o cookie administrativo nesse domínio. A sessão de lançamento e o tema continuam nas funções existentes. Igrejas, destaques, agenda e liturgia ainda usam seus handlers atuais.
+
+No painel, crie um canal e confirme a publicação em uma janela anônima. Em seguida, oculte o canal e confirme que ele aparece somente no painel. Para voltar aos mocks de perfil e canais, remova `VITE_PAROQUIAL_API_TENANT` e publique o frontend novamente.
 
 ## Tema e cores da paróquia
 
