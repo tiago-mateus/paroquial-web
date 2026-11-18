@@ -1,5 +1,7 @@
 import { get, put } from "@vercel/blob";
+import { neon } from "@neondatabase/serverless";
 import { parseTheme } from "../src/shared/theme/palette.js";
+import { postgresThemeStore } from "../server/parish-theme-store.js";
 import launchSession from "./launch-session.js";
 
 function json(body: object, status = 200) {
@@ -14,10 +16,17 @@ export default {
     if (request.method !== "GET" && request.method !== "PUT") return json({ code: "METHOD_NOT_ALLOWED" }, 405);
 
     const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const databaseUrl = process.env.DATABASE_URL?.trim();
     const path = "parish-themes/" + tenant + ".json";
 
     try {
+      const database = databaseUrl ? postgresThemeStore(neon(databaseUrl).query) : null;
       if (request.method === "GET") {
+        if (database) {
+          const row = await database.read(tenant);
+          if (row) return json({ storage: "shared", theme: parseTheme(row) });
+          if (!token) return json({ storage: "shared", theme: null });
+        }
         if (!token) return json({ storage: "browser", theme: null });
         const result = await get(path, { access: "private", useCache: false, token });
         if (!result) return json({ storage: "shared", theme: null });
@@ -31,10 +40,11 @@ export default {
       if (!auth.ok) return auth;
       const session = await auth.json();
       if (!session.adminTenants.some((item: { slug: string }) => item.slug === tenant)) return json({ code: "FORBIDDEN" }, 403);
-      if (!token) return json({ code: "STORAGE_UNAVAILABLE" }, 503);
+      if (!database && !token) return json({ code: "STORAGE_UNAVAILABLE" }, 503);
       const theme = parseTheme(await request.json().catch(() => null));
       if (!theme) return json({ code: "INVALID_THEME" }, 400);
-      await put(path, JSON.stringify(theme), { access: "private", allowOverwrite: true, addRandomSuffix: false, contentType: "application/json", token });
+      if (database) await database.write(tenant, theme);
+      else await put(path, JSON.stringify(theme), { access: "private", allowOverwrite: true, addRandomSuffix: false, contentType: "application/json", token });
       return json({ storage: "shared", theme });
     } catch {
       return json({ code: "THEME_UNAVAILABLE" }, 503);

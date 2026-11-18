@@ -30,7 +30,7 @@ function localLaunchSession(): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  Object.assign(process.env, loadEnv(mode, process.cwd(), ["PAROQUIAL_", "BLOB_"]));
+  Object.assign(process.env, loadEnv(mode, process.cwd(), ["PAROQUIAL_", "BLOB_", "DATABASE_URL"]));
   return {
     plugins: [react(), tailwindcss(), localLaunchSession()],
     server: {

@@ -64,4 +64,10 @@ Quando o backend estiver pronto, defina VITE_LAUNCH_MODE=false e aponte VITE_API
 
 Em Site → Tema e cores, selecione uma paleta pronta ou personalize as cores principal, de destaque e de fundo. As outras cores da interface acompanham a paleta, com validação de contraste antes de salvar.
 
-Por padrão, a preferência é salva neste navegador e separada por paróquia. Para disponibilizar a paleta a todos os visitantes, conecte um armazenamento Vercel Blob privado ao projeto de produção e disponibilize BLOB_READ_WRITE_TOKEN no servidor. Essa variável não usa o prefixo VITE_. A tela passará a oferecer Publicar tema. A gravação exige a sessão administrativa da paróquia.
+Por padrão, a preferência é salva neste navegador e separada por paróquia. Para disponibilizar a paleta a todos os visitantes, conecte um banco Neon ao projeto da Vercel. A tela oferece **Publicar tema** quando o banco está configurado. A gravação exige a sessão administrativa da paróquia.
+
+1. Crie uma branch de teste no Neon e obtenha as variáveis com `neon env pull --branch <branch-de-teste> --services postgres`. A aplicação usa a conexão com pool de `DATABASE_URL`. Configure essa variável também no ambiente **Preview** da Vercel. Ela fica no servidor e não usa o prefixo `VITE_`.
+2. Com a conexão direta da branch de teste em `DATABASE_URL_UNPOOLED`, execute `npm run db:migrate`. O comando cria `public.parish_themes` e pode ser repetido. Teste a publicação em **Site → Tema e cores**, depois confira a página pública em outra sessão do navegador.
+3. Quando estiver validado, aplique a mesma migração no banco de produção, configure sua `DATABASE_URL` no ambiente **Production** da Vercel e implante a versão que contém esta integração. A migração deve ser executada antes de expor o banco à aplicação.
+
+Se `BLOB_READ_WRITE_TOKEN` estiver configurada, uma paleta publicada anteriormente no Blob ainda é lida até a primeira publicação no banco. Paletas armazenadas apenas no navegador precisam ser reaplicadas. Agenda, igrejas, destaques e canais continuam na demonstração nesta etapa.
