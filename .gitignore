@@ -1,5 +1,25 @@
+# Dependências e arquivos de build
 dist/
 node_modules/
 *.tsbuildinfo
+coverage/
+
+# Configurações locais
 .env
-.env.local
+.env.*
+!.env.example
+*.log
+
+# Arquivos temporários, capturas e ferramentas de IA
+.tmp/
+.codex/
+.codex-temp-layout/
+.impeccable/
+.kiro/
+.playwright-mcp/
+.superdesign/
+test-results/
+playwright-report/
+/DESIGN.md
+/PRODUCT.md
+/design-qa.md
