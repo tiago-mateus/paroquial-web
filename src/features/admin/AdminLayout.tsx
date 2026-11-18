@@ -7,9 +7,11 @@ import { BottomNavigation } from '../../shared/components/BottomNavigation';
 import { adminNavigation } from './adminNavigation';
 import { SubscriptionBanner } from '../subscription/SubscriptionBanner';
 import { AdminDesktopNavigation } from './AdminDesktopNavigation';
+import { useApplyParishTheme } from '../../shared/theme/parishTheme';
 
 export function AdminLayout() {
   const { tenantSlug = '' } = useParams();
+  useApplyParishTheme(tenantSlug);
   const base = `/${tenantSlug}/admin`;
   return <>
     <div className="admin-workspace min-h-dvh min-w-0 bg-canvas text-ink lg:pl-[var(--admin-sidebar-width)]">
@@ -37,7 +39,7 @@ function LaunchAdminNotice() {
 
   return <div className="border-b border-line">
     <div className="mx-auto flex max-w-316 flex-wrap items-center justify-between gap-x-3 px-4 py-1 text-sm md:px-6 xl:px-8">
-      <p className="my-2 text-muted">Dados de demonstração. Alterações são temporárias.</p>
+      <p className="my-2 text-muted">Eventos e conteúdos de demonstração são temporários.</p>
       <button type="button" disabled={status === "pending"} onClick={() => void logout()} className="min-h-11 rounded-lg px-2 font-semibold text-primary hover:bg-selection">{status === "pending" ? "Saindo…" : "Sair"}</button>
       {status === "error" ? <p role="alert" className="m-0 w-full pb-2 text-danger">Não foi possível sair. Tente novamente.</p> : null}
     </div>

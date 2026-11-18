@@ -11,9 +11,18 @@ export function AdminSectionTabs({ compact = false }: { compact?: boolean }) {
     const container = active?.parentElement;
     if (!active || !container) return;
     // Scroll only the tab strip: scrollIntoView can also move the page below its sticky header.
-    const left = active.offsetLeft - container.offsetLeft;
-    if (left < container.scrollLeft) container.scrollLeft = left;
-    else if (left + active.offsetWidth > container.scrollLeft + container.clientWidth) container.scrollLeft = left + active.offsetWidth - container.clientWidth;
+    const revealActive = () => {
+      const tab = active.getBoundingClientRect();
+      const strip = container.getBoundingClientRect();
+      if (tab.left < strip.left) container.scrollLeft -= Math.ceil(strip.left - tab.left);
+      else if (tab.right > strip.right) container.scrollLeft += Math.ceil(tab.right - strip.right);
+    };
+    revealActive();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(revealActive);
+    observer.observe(container);
+    for (const item of container.children) observer.observe(item);
+    return () => observer.disconnect();
   }, [pathname]);
   const base = `/${tenantSlug}/admin`;
   const section = adminNavigation.find(item => item.path === pathname.slice(base.length).split('/').filter(Boolean)[0]);

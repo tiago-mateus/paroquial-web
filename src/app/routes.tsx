@@ -2,9 +2,11 @@ import { CalendarDays, Church, Home, Link2 } from 'lucide-react';
 import { Outlet, useMatch, useParams } from 'react-router-dom';
 import { BottomNavigation } from '../shared/components/BottomNavigation';
 import { prepareChurchMap } from '../features/churches/churchMapLoading';
+import { useApplyParishTheme } from '../shared/theme/parishTheme';
 
 export function PublicLayout() {
   const { tenantSlug = '' } = useParams();
+  useApplyParishTheme(tenantSlug);
   const base = `/${tenantSlug}`;
   const isHome = Boolean(useMatch('/:tenantSlug'));
   const isCalendar = Boolean(useMatch('/:tenantSlug/calendario'));

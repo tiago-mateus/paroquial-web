@@ -10,6 +10,7 @@ export const adminNavigation = [
     { label: 'Destaques', path: 'site/destaques' },
     { label: 'Canais oficiais', path: 'site/canais' },
     { label: 'Capa da página', path: 'site/pagina-inicial' },
+    { label: 'Tema e cores', path: 'site/tema' },
   ] },
   { label: 'Paróquia', path: 'paroquia', icon: Church, navigationLabel: 'Áreas da paróquia', items: [
     { label: 'Dados e contato', path: 'paroquia/dados' },

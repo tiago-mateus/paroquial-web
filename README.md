@@ -59,3 +59,9 @@ Gere o segredo com node -e "console.log(require('node:crypto').randomBytes(32).t
 A função de login é necessária mesmo sem banco. Uma hospedagem que entrega somente dist/ executa o formulário, mas não autentica o painel. Enquanto faltarem as variáveis do servidor, o painel fica fechado. Os dados do site e do painel são fictícios e carregados por MSW. As alterações no painel existem apenas durante a sessão da página e podem ser perdidas ao recarregar. Não use esses dados para cadastrar informações privadas.
 
 Quando o backend estiver pronto, defina VITE_LAUNCH_MODE=false e aponte VITE_API_URL para o backend para retomar o fluxo original.
+
+## Tema e cores da paróquia
+
+Em Site → Tema e cores, selecione uma paleta pronta ou personalize as cores principal, de destaque e de fundo. As outras cores da interface acompanham a paleta, com validação de contraste antes de salvar.
+
+Por padrão, a preferência é salva neste navegador e separada por paróquia. Para disponibilizar a paleta a todos os visitantes, conecte um armazenamento Vercel Blob privado ao projeto de produção e disponibilize BLOB_READ_WRITE_TOKEN no servidor. Essa variável não usa o prefixo VITE_. A tela passará a oferecer Publicar tema. A gravação exige a sessão administrativa da paróquia.

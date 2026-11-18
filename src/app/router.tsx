@@ -18,6 +18,7 @@ import { LegalPage } from "../features/subscription/LegalPage";
 import DemoCheckoutPage from "../features/subscription/DemoCheckoutPage";
 import { PasswordRecoveryPage } from "../features/auth/PasswordRecoveryPage";
 import { RequireAdmin } from "../features/auth/RequireAdmin";
+import { AdminThemePage } from "../features/admin/AdminThemePage";
 
 import { demoMode, launchMode } from "../shared/launchMode";
 import { LaunchSignupPage } from "../features/subscription/LaunchSignupPage";
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: "site/pagina-inicial", element: <AdminHomePage /> },
       { path: "site/destaques", element: <AdminHighlightsPage /> },
       { path: "site/canais", element: <AdminChannelsPage /> },
+      { path: "site/tema", element: <AdminThemePage /> },
       { path: "mais", element: <AdminLegacyRedirect path="paroquia" /> },
       { path: "paroquia", element: <AdminParishHubPage /> },
       { path: "paroquia/dados", element: <AdminParishPage /> },
