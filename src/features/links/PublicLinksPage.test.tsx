@@ -18,17 +18,17 @@ describe("PublicLinksPage", () => {
   it("exibe somente links ativos, ordenados e com URLs normalizadas", async () => {
     renderPage("sao-jose");
 
-    expect(await screen.findByRole("heading", { name: "Canais oficiais" })).toBeInTheDocument();
-    expect(await screen.findByText("7 links")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Links | Canais Oficiais" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(7));
     expect(screen.queryByText(/Clique em um dos cards/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Confissões/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Canal desativado")).not.toBeInTheDocument();
 
-    const links = screen.getAllByRole("link", { name: /^Abrir / });
-    expect(links[0]).toHaveAccessibleName("Abrir Site oficial");
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAccessibleName("Site oficial (abre em nova aba)");
     expect(links[0]).toHaveAttribute("href", "https://paroquiasantoantonio.org.br");
-    expect(screen.getByRole("link", { name: "Abrir E-mail" })).toHaveAttribute("href", "mailto:secretaria@paroquia.org.br");
-    expect(screen.getByRole("link", { name: "Abrir Telefone" })).toHaveAttribute("href", "tel:+551133332211");
+    expect(screen.getByRole("link", { name: "E-mail" })).toHaveAttribute("href", "mailto:secretaria@paroquia.org.br");
+    expect(screen.getByRole("link", { name: "Telefone" })).toHaveAttribute("href", "tel:+551133332211");
   });
 
   it("registra uma tentativa de clique sem bloquear o destino", async () => {
@@ -39,7 +39,7 @@ describe("PublicLinksPage", () => {
     }));
     renderPage("sao-jose");
 
-    const link = await screen.findByRole("link", { name: "Abrir Instagram" });
+    const link = await screen.findByRole("link", { name: "Instagram (abre em nova aba)" });
     fireEvent.click(link);
     expect(link).toHaveAttribute("target", "_blank");
     await waitFor(() => expect(attempts).toBe(1));

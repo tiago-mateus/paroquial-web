@@ -1,10 +1,78 @@
 @import "tailwindcss";
+@import "./admin.css";
+
+@font-face {
+  font-family: Manrope;
+  src: url('/fonts/manrope/manrope-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Fraunces;
+  src: url('/fonts/fraunces/fraunces-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --font-display: Fraunces, Georgia, serif;
+  --color-canvas: #f7f7ef;
+  --color-surface: #fffef9;
+  --color-ink: #163b31;
+  --color-muted: #53685f;
+  --color-line: #dbe3d9;
+  --color-control-border: #7d9185;
+  --color-primary: #17654d;
+  --color-primary-hover: #104b39;
+  --color-selection: #e4eddd;
+  --color-focus: #17654d;
+  --color-accent: #f1ca67;
+  --color-accent-ink: #514019;
+  --color-success: #216142;
+  --color-warning: #865915;
+  --color-danger: #b33038;
+  --color-map-background: #f6f5f0;
+  --color-landing-tint: #dce9d4;
+  --color-landing-sky: #a9c797;
+  --animate-parish-reveal: parish-reveal 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-landing-enter: landing-enter 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-landing-screens: landing-screens 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes landing-screens {
+    from { opacity: 0.5; translate: 0 28px; }
+    to { opacity: 1; translate: 0 0; }
+  }
+
+  @keyframes landing-enter {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes parish-reveal {
+    from { clip-path: inset(0 0 4% 0 round 16px); }
+    to { clip-path: inset(0 0 0 0 round 16px); }
+  }
+}
 
 @layer base {
   :root {
-    @apply bg-slate-50 text-slate-800;
-    font-family:
-      Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    @apply bg-canvas font-sans text-ink;
+    accent-color: var(--color-primary);
+    caret-color: var(--color-primary);
+    scrollbar-color: #8da28d var(--color-canvas);
+    text-underline-offset: .2em;
+  }
+
+  ::selection { @apply bg-accent text-accent-ink; }
+  :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+  button, summary, input, select { touch-action: manipulation; }
+  input, select, textarea { @apply text-base; }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
   }
 
   * {
@@ -24,11 +92,15 @@
   }
 
   .primary-link {
-    @apply inline-flex cursor-pointer items-center rounded-md border-0 bg-blue-600 px-3.5 py-2.5 font-[inherit] text-white;
+    @apply inline-flex min-h-11 cursor-pointer items-center rounded-xl border-0 bg-primary px-4 py-2.5 font-[inherit] text-white hover:bg-primary-hover;
   }
 
   button:disabled {
     @apply cursor-not-allowed opacity-65;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']), select, textarea {
+    border-color: var(--color-control-border);
   }
 
   main {
@@ -37,42 +109,22 @@
 }
 
 @layer components {
-  .app-shell,
-  .admin-shell {
-    @apply min-h-screen;
+  .landing-theme {
+    accent-color: var(--color-primary);
+    caret-color: var(--color-primary);
+    scrollbar-color: var(--color-muted) var(--color-canvas);
+    line-height: 1.6;
   }
 
-  .topbar {
-    @apply flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4;
-  }
-
-  .topbar nav,
-  .admin-shell aside {
-    @apply flex gap-4;
-  }
-
-  .admin-shell {
-    @apply grid grid-cols-[220px_1fr];
-  }
-
-  .admin-shell aside {
-    @apply flex-col bg-gray-900 p-5 text-white;
-  }
-
-  .page-heading {
-    @apply flex items-center justify-between gap-4;
-  }
-
-  .event-list {
-    @apply grid gap-3;
-  }
-
-  .event-card {
-    @apply grid gap-1 rounded-lg border border-slate-200 bg-white p-4;
+  .public-home-theme, .admin-workspace, .admin-theme {
+    background-color: var(--color-canvas);
+    accent-color: var(--color-primary);
+    caret-color: var(--color-primary);
+    scrollbar-color: var(--color-muted) var(--color-canvas);
   }
 
   .churches-map .leaflet-container {
-    @apply bg-slate-200 font-sans;
+    @apply font-sans;
   }
 
   .church-map-div-icon {
@@ -80,24 +132,58 @@
     border: 0;
   }
 
+  .church-map-pin {
+    --marker-fill: var(--color-primary);
+    --marker-ink: #ffffff;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 4px rgb(15 23 42 / 0.18));
+  }
+
+  .church-map-pin::before {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translateX(-50%) rotate(45deg);
+    background: var(--marker-fill);
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+  }
+
   .church-map-marker {
-    @apply grid h-full w-full place-items-center rounded-full border-[3px] border-white text-sm text-white shadow-[0_8px_22px_rgb(15_23_42/0.3)];
+    @apply relative grid w-full place-items-center rounded-full border-2 border-white text-sm;
+    height: calc(100% - 10px);
+    background: var(--marker-fill);
+    color: var(--marker-ink);
   }
 
   .church-map-marker svg {
-    @apply h-[55%] w-[55%];
+    @apply h-[64%] w-[64%];
   }
 
-  .church-map-marker--chapel {
-    @apply bg-slate-600;
-  }
-
-  .church-map-marker--matrix {
-    @apply bg-amber-600;
+  .church-map-marker--matrix .church-map-marker {
+    @apply rounded-2xl;
   }
 
   .church-map-marker--selected {
-    @apply bg-amber-500 text-base ring-4 ring-amber-500/25;
+    --marker-fill: var(--color-accent);
+    --marker-ink: var(--color-accent-ink);
+  }
+
+  .church-map-marker--selected .church-map-marker {
+    @apply ring-2 ring-accent/40;
+  }
+
+  .church-map-cluster {
+    @apply grid h-full w-full place-items-center rounded-full border-2 border-primary/50 bg-surface text-base font-extrabold tabular-nums text-primary shadow-[0_3px_10px_rgb(15_23_42/0.18)];
+  }
+
+  .church-map-cluster--selected {
+    @apply border-accent-ink bg-accent text-accent-ink;
   }
 
   .churches-map .leaflet-control-layers,
@@ -109,24 +195,28 @@
     @apply border-slate-100 text-slate-700;
   }
 
-  @media (min-width: 768px) {
-    .churches-map .leaflet-right {
-      right: calc(22.5rem + 1.5rem);
-    }
-  }
-
-  @media (max-width: 767px) {
-    .churches-map .leaflet-right {
-      right: 0.5rem;
-      top: 3.25rem;
-    }
-  }
 }
 
-@layer utilities {
-  @media (max-width: 720px) {
-    .admin-shell {
-      @apply grid-cols-1;
-    }
-  }
+/* Leaflet loads unlayered styles; keep its scoped control sizing in that cascade. */
+.churches-map,
+.churches-map .leaflet-container {
+  /* Match parish-light.json, including before the first tiles arrive. */
+  background-color: var(--color-map-background);
+}
+.churches-map .leaflet-top.leaflet-right { right: 0.5rem; top: 0.5rem; }
+.churches-map .leaflet-container .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+.churches-map .leaflet-container .leaflet-control-layers-toggle { width: 44px; height: 44px; }
+.churches-map .leaflet-tooltip {
+  width: max-content;
+  max-width: min(240px, calc(100vw - 48px));
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: normal;
+  box-shadow: 0 3px 10px rgb(15 23 42 / 0.12);
 }

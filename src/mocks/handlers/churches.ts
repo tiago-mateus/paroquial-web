@@ -1,7 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
 import { churches, churchAccessByTenant } from "../data/churches";
 import { findTenantBySlug } from "../data";
-import { baseUrl } from "../utils";
+import { baseUrl, createMockId } from "../utils";
 import type { UpsertChurchRequest } from "../../shared/api/churches";
 
 function publicChurch(church: (typeof churches)[number]) {
@@ -42,7 +42,7 @@ export const churchHandlers = [
     const tenant = findTenantBySlug(tenantSlug);
     if (!tenant) return HttpResponse.json({ code: "TENANT_NOT_FOUND", message: "Paróquia não encontrada." }, { status: 404 });
     const input = await request.json() as UpsertChurchRequest;
-    const church = { ...input, id: crypto.randomUUID(), tenantId: tenant.id, tenantSlug };
+    const church = { ...input, id: createMockId(), tenantId: tenant.id, tenantSlug };
     churches.push(church);
     return HttpResponse.json(publicChurch(church), { status: 201 });
   }),

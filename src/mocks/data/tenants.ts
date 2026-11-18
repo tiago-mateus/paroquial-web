@@ -23,11 +23,11 @@ export const tenants: MockTenant[] = [
     contato: "secretaria@paroquial.local",
     telefone: "(11) 99999-9999",
     endereco: "Rua Exemplo, 123",
-    cidade: "Sao Paulo",
-    estado: "SP",
+    cidade: "Itaitinga",
+    estado: "CE",
     homeHeader: {
       imageUrl:
-        "https://images.unsplash.com/photo-1514896856000-91cb6de818e0?auto=format&fit=crop&w=1200&q=80",
+        "https://www.anuariodoceara.com.br/wp-content/uploads/2023/07/ITAITINGA_igreja-matriz_FOTO_Oseias-Targino-822x537.jpeg",
       imageOpacity: 0.34,
       gradientFrom: "#7c2d12",
       gradientTo: "#1f2937",

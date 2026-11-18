@@ -1,4 +1,5 @@
 import type { CalendarEvent, CreateEventRequest } from "../shared/api/events";
+import { createMockId } from "./utils";
 
 type EventStore = CalendarEvent[];
 
@@ -13,7 +14,7 @@ export function listEventsByRange(store: EventStore, tenantSlug: string, start: 
 }
 
 export function createMockEvent(tenantSlug: string, input: CreateEventRequest): CalendarEvent {
-  const id = crypto.randomUUID();
+  const id = createMockId();
   const start = input.start;
 
   return {

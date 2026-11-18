@@ -12,15 +12,18 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
 
 describe("AdminDashboardPage", () => {
-  it("apresenta dados reais e acessos administrativos", async () => {
+  it("apresenta a programação do dia, a situação da paróquia e as ações principais", async () => {
     renderPage();
 
-    expect(await screen.findByRole("heading", { name: "Paróquia Santo Antônio de Pádua" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Programação de hoje" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Painel" })).toBeInTheDocument();
+    expect(await screen.findByText("Paróquia Santo Antônio de Pádua")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "Hoje" })).toBeInTheDocument();
     expect(await screen.findAllByText("Terço dos Homens")).not.toHaveLength(0);
-    expect(screen.getByRole("link", { name: "Criar evento hoje" })).toHaveAttribute("href", expect.stringContaining("action=new"));
+    expect(await screen.findByRole("heading", { level: 2, name: "Situação da paróquia" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Novo evento" })).toHaveAttribute("href", expect.stringContaining("action=new"));
+    expect(screen.getByRole("link", { name: "Novo destaque" })).toHaveAttribute("href", "/sao-jose/admin/site/destaques?action=new");
     expect(screen.getByRole("link", { name: "Ver site público" })).toHaveAttribute("href", "/sao-jose");
-    expect(screen.getByRole("link", { name: /Revisar horários/ })).toHaveAttribute("href", "/sao-jose/admin/horarios");
+    expect(screen.getByRole("link", { name: "Situação do site" })).toHaveAttribute("href", "/sao-jose/admin/site/status");
   });
 });
 

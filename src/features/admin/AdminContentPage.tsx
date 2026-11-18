@@ -1,182 +1,386 @@
+import { toast } from "sonner";
+import { AdminNotice } from "./AdminNotice";
+import { useAdminDraft } from "./useAdminDraft";
+import { updateTenantFields } from "./updateTenantFields";
+import { UnsavedChanges } from "./UnsavedChanges";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, CalendarDays, Check, ChevronRight, ExternalLink, Eye, EyeOff, Link2, LoaderCircle, MessageCircleMore, PanelsTopLeft, Pencil, Plus, RefreshCw, Save, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Link, NavLink, useParams } from "react-router-dom";
+import { CalendarDays, Check, ChevronRight, ExternalLink, Eye, EyeOff, GripVertical, Link2, LoaderCircle, MessageCircleMore, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { AdminConfirmDialog } from "./AdminConfirmDialog";
+import { AdminActionMenu } from "./AdminActionMenu";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { useDragReorder } from "./useDragReorder";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { createTenantBanner, deleteTenantBanner, getTenantBanners, updateTenantBanner, type PublicHomeBanner, type UpsertBannerRequest } from "../../shared/api/banners";
 import { createTenantLink, deleteTenantLink, getAdminTenantLinks, updateTenantLink, type PublicLink, type UpsertLinkRequest } from "../../shared/api/links";
-import { getTenant, updateTenant, type ConfessionScheduleItem, type HomeHeaderConfig } from "../../shared/api/tenants";
-import { formatBrazilianPhone, getBrazilianWhatsappHref, isValidBrazilianPhone } from "../../shared/lib/phone";
-import { HomeHeader } from "../home/HomeHeader";
-import { normalizeLinkUrl, resolveLinkColor, resolveLinkIcon } from "../links/linkPresentation";
-import { AdminFormDialog, fieldClassName, labelClassName } from "./AdminFormDialog";
-import { AdminPageHeader } from "./AdminPageHeader";
-import { ConfessionScheduleEditor } from "./ConfessionScheduleEditor";
-import { validateConfessionSchedule } from "./confessionSchedule";
+import { getTenant, type HomeHeaderConfig } from "../../shared/api/tenants";
+import { HomeCoverEditor } from "./HomeCoverEditor";
+import { DEFAULT_HIGHLIGHT_BACKGROUND, HighlightContent } from "../home/HighlightContent";
+import { getLinkDestination, normalizeLinkUrl, resolveLinkColor, resolveLinkIcon } from "../links/linkPresentation";
+import { AdminChannelFields } from "./AdminChannelFields";
+import { AdminFormDialog } from "./AdminFormDialog";
+import { fieldClassName, labelClassName } from "./AdminFormStyles";
+import { AdminPageHeader, type AdminHeaderAction } from "./AdminPageHeader";
+import { AdminPage, AdminPageContent, AdminSurface, AdminSurfaceHeader } from "./AdminPage";
+import { AdminSaveBar } from "./AdminSaveBar";
 
-const emptyBanner: UpsertBannerRequest = { tipo: "aviso", titulo: "", mensagem: "", link: "", bgImg: "", order: 0 };
+const emptyBanner: UpsertBannerRequest = { tipo: "aviso", titulo: "", mensagem: "", link: "", bgImg: "", bgColor: "", order: 0 };
 const emptyLink: UpsertLinkRequest = { title: "", url: "", iconKey: "link", colorKey: "slate", variant: "default", order: 0, isActive: true };
-type HomeFormState = { homeHeader: HomeHeaderConfig; telefone: string; confessionSchedule: ConfessionScheduleItem[] };
+
+const BANNER_TYPE_OPTIONS = [
+  { value: "aviso", label: "Aviso" },
+  { value: "campanha", label: "Campanha" },
+  { value: "convite", label: "Convite" },
+  { value: "comunicado", label: "Comunicado" },
+] as const;
+
+const BANNER_TITLE_MAX = 60;
+const BANNER_MESSAGE_MAX = 140;
+
+const BANNER_COLOR_OPTIONS = [
+  { value: "", label: "Padrão (âmbar)", gradient: DEFAULT_HIGHLIGHT_BACKGROUND },
+  { value: "linear-gradient(135deg, #be123c, #7f1d1d)", label: "Vermelho", gradient: "linear-gradient(135deg, #be123c, #7f1d1d)" },
+  { value: "linear-gradient(135deg, #0369a1, #164e63)", label: "Azul", gradient: "linear-gradient(135deg, #0369a1, #164e63)" },
+  { value: "linear-gradient(135deg, #0f766e, #134e4a)", label: "Verde", gradient: "linear-gradient(135deg, #0f766e, #134e4a)" },
+  { value: "linear-gradient(135deg, #6d28d9, #4c1d95)", label: "Roxo", gradient: "linear-gradient(135deg, #6d28d9, #4c1d95)" },
+  { value: "linear-gradient(135deg, #475569, #1f2937)", label: "Grafite", gradient: "linear-gradient(135deg, #475569, #1f2937)" },
+] as const;
+
 
 export function AdminHomePage() {
   const { tenantSlug = "" } = useParams();
   const queryClient = useQueryClient();
-  const tenantQuery = useQuery({ queryKey: ["tenant", tenantSlug], queryFn: () => getTenant(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
-  const bannersQuery = useQuery({ queryKey: ["banners", tenantSlug], queryFn: () => getTenantBanners(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
-  const linksQuery = useQuery({ queryKey: ["admin", "links", tenantSlug], queryFn: () => getAdminTenantLinks(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
-  const [form, setForm] = useState<HomeFormState>({ homeHeader: {}, telefone: "", confessionSchedule: [] });
+  const query = useQuery({ queryKey: ["tenant", tenantSlug], queryFn: () => getTenant(tenantSlug), enabled: Boolean(tenantSlug), retry: false, refetchOnWindowFocus: false });
+  const serverHeader = useMemo(() => query.data ? query.data.homeHeader ?? {} : undefined, [query.data]);
+  const { value: header, setValue: setHeader, dirty, commit } = useAdminDraft<HomeHeaderConfig>({}, serverHeader);
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (tenantQuery.data) setForm({ homeHeader: tenantQuery.data.homeHeader ?? {}, telefone: tenantQuery.data.telefone ?? "", confessionSchedule: tenantQuery.data.confessionSchedule ?? [] });
-  }, [tenantQuery.data]);
-
+  const imageUrlError = getBannerUrlError(header.imageUrl);
   const mutation = useMutation({
-    mutationFn: async () => {
-      if (!tenantQuery.data) throw new Error("Os dados da paróquia ainda não foram carregados.");
-      return updateTenant(tenantSlug, {
-        name: tenantQuery.data.name,
-        contato: tenantQuery.data.contato,
-        telefone: form.telefone,
-        endereco: tenantQuery.data.endereco,
-        cidade: tenantQuery.data.cidade,
-        estado: tenantQuery.data.estado,
-        confessionSchedule: form.confessionSchedule,
-        homeHeader: form.homeHeader,
-        homeActions: tenantQuery.data.homeActions,
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["tenant", tenantSlug] });
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 3000);
-    },
+    mutationFn: () => updateTenantFields(tenantSlug, { homeHeader: { ...header, imageUrl: header.imageUrl?.trim() } }),
+    onSuccess: async (tenant) => { commit(tenant.homeHeader ?? {}); setSaved(true); toast.success("Capa atualizada"); await queryClient.invalidateQueries({ queryKey: ["tenant", tenantSlug] }); },
   });
-  const activeLinks = linksQuery.data?.filter((item) => item.isActive !== false).length ?? 0;
-  const isDirty = tenantQuery.data ? JSON.stringify(form) !== JSON.stringify({ homeHeader: tenantQuery.data.homeHeader ?? {}, telefone: tenantQuery.data.telefone ?? "", confessionSchedule: tenantQuery.data.confessionSchedule ?? [] }) : false;
-  const phoneError = form.telefone && !isValidBrazilianPhone(form.telefone) ? "Informe um telefone com DDD válido." : undefined;
-  const scheduleErrors = validateConfessionSchedule(form.confessionSchedule);
-  const hasValidationErrors = Boolean(phoneError || Object.keys(scheduleErrors).length);
-
-  return <SitePageShell title="Página inicial" description="Configure a capa e o que acontece quando os fiéis usam suas ações rápidas." publicHref={`/${tenantSlug}`} action={<button type="submit" form="admin-home-form" disabled={mutation.isPending || !isDirty || hasValidationErrors} className={`inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-500 ${saved ? "bg-emerald-700" : "bg-slate-950"}`}>{mutation.isPending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" size={15} /> : saved ? <Check size={15} /> : <Save size={15} />}{saved ? "Alterações publicadas" : isDirty ? "Salvar alterações" : "Tudo salvo"}</button>}>
-    {tenantQuery.isLoading ? <HomeSkeleton /> : tenantQuery.isError || !tenantQuery.data ? <QueryError title="Não foi possível carregar a página inicial" onRetry={() => tenantQuery.refetch()} /> : (
-      <form id="admin-home-form" noValidate onSubmit={(event) => { event.preventDefault(); if (!hasValidationErrors) mutation.mutate(); }} className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_20rem] md:gap-5">
-        <HomePreview compact tenantSlug={tenantSlug} tenantName={tenantQuery.data.name} city={[tenantQuery.data.cidade, tenantQuery.data.estado].filter(Boolean).join(" · ")} headerConfig={form.homeHeader} telefone={form.telefone} confessionSchedule={form.confessionSchedule} />
-        <div className="border-y border-slate-200 bg-white md:col-start-1 md:row-start-1 md:overflow-hidden md:rounded-2xl md:border">
-          <FormSection title="Ações da capa" description="Os textos são fixos; configure o destino e os horários exibidos">
-            <div className="flex items-center gap-3"><span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-amber-100 text-amber-700"><MessageCircleMore size={17} /></span><span className="min-w-0"><strong className="block text-sm">Secretaria</strong><small className="block text-xs text-slate-600">Falar no WhatsApp</small></span></div><label className={`${labelClassName} mt-4 block`}>Número do WhatsApp<input type="tel" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={(event) => setForm({ ...form, telefone: formatBrazilianPhone(event.target.value) })} aria-invalid={Boolean(phoneError)} aria-describedby="home-phone-help" placeholder="(11) 99999-9999" className={`${fieldClassName} ${phoneError ? "border-red-400" : ""}`} /></label><span id="home-phone-help" className={`mt-1.5 block text-[0.68rem] font-semibold ${phoneError ? "text-red-700" : form.telefone ? "text-emerald-700" : "text-slate-500"}`}>{phoneError ?? (form.telefone ? "O botão abrirá uma conversa neste WhatsApp." : "Sem número, o botão aparecerá como indisponível.")}</span>
-            <div className="mt-5 border-t border-slate-100 pt-5"><div className="flex items-center gap-3"><span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-white text-white ring-1 ring-slate-200"><span className="grid h-8 w-8 place-items-center rounded-full bg-slate-700"><CalendarDays size={16} /></span></span><span className="min-w-0"><strong className="block text-sm">Confissões</strong><small className="block text-xs text-slate-600">Ver horários</small></span></div><div className="mt-3"><ConfessionScheduleEditor items={form.confessionSchedule} onChange={(confessionSchedule) => setForm({ ...form, confessionSchedule })} errors={scheduleErrors} disabled={mutation.isPending} idPrefix="home-confession" /></div></div>
-          </FormSection>
-          <FormSection title="Capa da página" description="Imagem e contraste usados no topo do site público">
-            <label className={labelClassName}>URL da imagem principal<input type="url" value={form.homeHeader?.imageUrl ?? ""} onChange={(event) => setForm({ ...form, homeHeader: { ...form.homeHeader, imageUrl: event.target.value } })} className={fieldClassName} placeholder="https://..." /></label>
-            <label className={`${labelClassName} mt-4 block`}>Visibilidade da imagem <span className="font-medium text-slate-500">{Math.round((form.homeHeader?.imageOpacity ?? 0.5) * 100)}%</span><input aria-label="Visibilidade da imagem" type="range" min="0.2" max="1" step="0.05" value={form.homeHeader?.imageOpacity ?? 0.5} onChange={(event) => setForm({ ...form, homeHeader: { ...form.homeHeader, imageOpacity: Number(event.target.value) } })} className="mt-3 w-full accent-amber-600" /></label>
-          </FormSection>
-          <section aria-labelledby="home-blocks-title"><div className="px-4 pb-2 pt-5 md:px-5"><h2 id="home-blocks-title" className="m-0 text-sm font-bold">Conteúdo da página</h2><p className="m-0 mt-0.5 text-xs text-slate-600">Confira a origem e o estado de cada bloco publicado</p></div><ContentBlockRow icon={<ShieldCheck size={17} />} label="Identidade paroquial" value={tenantQuery.data.name} href={`/${tenantSlug}/admin/paroquia`} tone="bg-sky-50 text-sky-700" /><ContentBlockRow icon={<Sparkles size={17} />} label="Destaques" value={bannersQuery.isLoading ? "Verificando..." : bannersQuery.isError ? "Indisponível" : `${bannersQuery.data?.length ?? 0} publicados`} href={`/${tenantSlug}/admin/site/destaques`} tone="bg-amber-50 text-amber-800" /><ContentBlockRow icon={<Link2 size={17} />} label="Canais oficiais" value={linksQuery.isLoading ? "Verificando..." : linksQuery.isError ? "Indisponível" : `${activeLinks} visíveis`} href={`/${tenantSlug}/admin/site/canais`} tone="bg-emerald-50 text-emerald-700" /><ContentBlockRow icon={<CalendarDays size={17} />} label="Próximos eventos" value="Atualizados automaticamente pela Agenda" href={`/${tenantSlug}/admin/calendario`} tone="bg-violet-50 text-violet-700" /></section>
-          {isDirty || mutation.isPending || saved || mutation.error ? <div className="sticky bottom-16 z-10 flex min-h-17 items-center gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:hidden"><MutationNotice success={saved ? "Alterações publicadas" : undefined} error={mutation.error} /><span className={`text-xs font-semibold ${saved || mutation.error ? "hidden" : hasValidationErrors ? "text-red-700" : "text-slate-500"}`}>{hasValidationErrors ? "Revise os campos" : "Alterações não salvas"}</span><button type="submit" disabled={mutation.isPending || !isDirty || hasValidationErrors} className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-500">{mutation.isPending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" size={15} /> : <Save size={15} />} Salvar</button></div> : null}
-        </div>
-        <HomePreview tenantSlug={tenantSlug} tenantName={tenantQuery.data.name} city={[tenantQuery.data.cidade, tenantQuery.data.estado].filter(Boolean).join(" · ")} headerConfig={form.homeHeader} telefone={form.telefone} confessionSchedule={form.confessionSchedule} />
-      </form>
-    )}
+  const updateHeader = (value: HomeHeaderConfig) => { setHeader(value); setSaved(false); };
+  return <SitePageShell title="Capa da página" description="Dê as boas-vindas à comunidade com uma imagem da sua paróquia." publicHref={`/${tenantSlug}`} contentClassName="admin-save-content" wide>
+    <UnsavedChanges dirty={dirty} />
+    {query.isLoading ? <HomeSkeleton /> : query.isError || !query.data ? <QueryError title="Não foi possível carregar a página inicial" onRetry={() => query.refetch()} /> : <form className="grid w-full min-w-0 gap-8" id="admin-home-form" onSubmit={(event) => { event.preventDefault(); if (dirty && !imageUrlError && !mutation.isPending) mutation.mutate(); }}>
+      <HomeCoverEditor tenantSlug={tenantSlug} tenant={query.data} header={header} onChange={updateHeader} pending={mutation.isPending} urlError={imageUrlError} />
+      <section aria-labelledby="home-owners" className="max-w-3xl"><AdminSurfaceHeader id="home-owners" title="Também aparece na capa" description="Os atalhos usam as informações cadastradas nestas áreas." />
+        <ContentBlockRow icon={<MessageCircleMore size={18} />} tone="bg-canvas text-primary" label="Contato da secretaria" value={query.data.telefone || "Telefone não informado"} href={`/${tenantSlug}/admin/paroquia/dados`} />
+        <ContentBlockRow icon={<CalendarDays size={18} />} tone="bg-canvas text-primary" label="Horários de confissão" value={`${query.data.confessionSchedule?.length ?? 0} horários configurados`} href={`/${tenantSlug}/admin/calendario/confissoes`} />
+      </section>
+      <AdminSaveBar dirty={dirty} pending={mutation.isPending} invalid={Boolean(imageUrlError)} saved={saved} error={mutation.error} label="Publicar alterações" />
+    </form>}
   </SitePageShell>;
 }
 
 export function AdminHighlightsPage() {
   const { tenantSlug = "" } = useParams();
+  const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["banners", tenantSlug], queryFn: () => getTenantBanners(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
   const banners = useMemo(() => [...(query.data ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [query.data]);
   const [editor, setEditor] = useState<PublicHomeBanner | "new" | null>(null);
   const [form, setForm] = useState<UpsertBannerRequest>(emptyBanner);
+  const [initialForm, setInitialForm] = useState<UpsertBannerRequest>(emptyBanner);
+  const [organizing, setOrganizing] = useState(false);
   const [deleteItem, setDeleteItem] = useState<PublicHomeBanner | null>(null);
-  const [feedback, setFeedback] = useState<string>();
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["banners", tenantSlug] });
   const createMutation = useMutation({ mutationFn: (input: UpsertBannerRequest) => createTenantBanner(tenantSlug, input), onSuccess: refresh });
   const updateMutation = useMutation({ mutationFn: ({ id, input }: { id: string; input: UpsertBannerRequest }) => updateTenantBanner(tenantSlug, id, input), onSuccess: refresh });
   const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTenantBanner(tenantSlug, id), onSuccess: refresh });
-  const reorderMutation = useMutation({ mutationFn: async ({ item, neighbor }: { item: PublicHomeBanner; neighbor: PublicHomeBanner }) => Promise.all([updateTenantBanner(tenantSlug, item.id, bannerRequest(item, neighbor.order ?? 0)), updateTenantBanner(tenantSlug, neighbor.id, bannerRequest(neighbor, item.order ?? 0))]), onSuccess: refresh });
-  const pending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || reorderMutation.isPending;
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: PublicHomeBanner[]) => {
+      const changed = reordered.map((banner, position) => ({ banner, position })).filter(({ banner, position }) => (banner.order ?? 0) !== position);
+      await Promise.all(changed.map(({ banner, position }) => updateTenantBanner(tenantSlug, banner.id, bannerRequest(banner, position))));
+    },
+    onMutate: async (reordered) => {
+      await queryClient.cancelQueries({ queryKey: ["banners", tenantSlug] });
+      const previous = queryClient.getQueryData<PublicHomeBanner[]>(["banners", tenantSlug]);
+      queryClient.setQueryData<PublicHomeBanner[]>(["banners", tenantSlug], reordered.map((banner, position) => ({ ...banner, order: position })));
+      return { previous };
+    },
+    onError: (_error, _variables, context) => { if (context?.previous) queryClient.setQueryData(["banners", tenantSlug], context.previous); },
+    onSettled: refresh,
+  });
+  const pending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
   const mutationError = createMutation.error || updateMutation.error || deleteMutation.error || reorderMutation.error;
-  function openEditor(item?: PublicHomeBanner) { setFeedback(undefined); setForm(item ? bannerRequest(item, item.order ?? 0) : { ...emptyBanner, order: banners.length }); setEditor(item ?? "new"); }
-  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (editor === null) return; if (editor === "new") await createMutation.mutateAsync(form); else await updateMutation.mutateAsync({ id: editor.id, input: form }); setEditor(null); setFeedback(editor === "new" ? "Destaque publicado" : "Destaque atualizado"); }
-  async function confirmDelete() { if (!deleteItem) return; await deleteMutation.mutateAsync(deleteItem.id); setDeleteItem(null); setEditor(null); setFeedback("Destaque excluído"); }
-  function move(item: PublicHomeBanner, direction: -1 | 1) { const index = banners.findIndex((candidate) => candidate.id === item.id); const neighbor = banners[index + direction]; if (neighbor) reorderMutation.mutate({ item, neighbor }); }
-  return <SitePageShell title="Destaques" description="Comunicados publicados no carrossel da página inicial." publicHref={`/${tenantSlug}`} action={<button type="button" onClick={() => openEditor()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-3.5 text-xs font-bold text-white"><Plus size={15} /> Novo destaque</button>}>
-    <section className="overflow-hidden border-y border-slate-200 bg-white md:rounded-2xl md:border"><div className="flex items-start justify-between gap-3 px-4 py-4 md:px-5"><div className="min-w-0"><h2 className="m-0 text-sm font-bold">Destaques publicados</h2><p className="m-0 mt-1 text-xs font-semibold text-amber-800">{query.isLoading ? "Verificando publicações" : `${banners.length} ${banners.length === 1 ? "item publicado" : "itens publicados"}`}</p><p className="m-0 mt-1 max-w-2xl text-xs leading-5 text-slate-600">A Liturgia do Dia entra automaticamente no carrossel.</p></div><button type="button" onClick={() => openEditor()} className="inline-flex h-10 flex-none items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-xs font-bold text-white md:hidden" aria-label="Novo destaque"><Plus size={16} /> Novo</button></div><MutationNotice className="px-4 pb-3 md:px-5" success={feedback} error={mutationError} />{query.isLoading ? <RowsSkeleton /> : query.isError ? <QueryError title="Não foi possível carregar os destaques" onRetry={() => query.refetch()} compact /> : banners.length ? <div className="divide-y divide-slate-100">{banners.map((banner, index) => <BannerRow key={banner.id} banner={banner} index={index} total={banners.length} disabled={pending} onEdit={() => openEditor(banner)} onMove={(direction) => move(banner, direction)} />)}</div> : <EmptyResource icon={<Sparkles size={21} />} title="Nenhum destaque publicado" description="Publique o primeiro comunicado para exibi-lo no carrossel da página inicial." action="Criar destaque" onAction={() => openEditor()} />}</section>
-    <AdminFormDialog open={editor !== null} eyebrow="Página inicial" title={editor === "new" ? "Novo destaque" : "Editar destaque"} submitLabel={editor === "new" ? "Publicar" : "Salvar alterações"} pending={pending} onClose={() => setEditor(null)} onSubmit={submit} onDelete={editor && editor !== "new" ? () => setDeleteItem(editor) : undefined}><BannerFields form={form} onChange={setForm} /></AdminFormDialog>
-    <DeleteDialog open={Boolean(deleteItem)} title="Excluir destaque?" description={deleteItem ? `“${deleteItem.titulo}” deixará de aparecer na página inicial.` : ""} pending={deleteMutation.isPending} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />
+  function openEditor(item?: PublicHomeBanner) { setOrganizing(false); const next = item ? bannerRequest(item, item.order ?? 0) : { ...emptyBanner, order: Math.max(-1, ...banners.map(banner => banner.order ?? 0)) + 1 }; createMutation.reset(); updateMutation.reset(); deleteMutation.reset(); reorderMutation.reset(); setForm(next); setInitialForm(next); setEditor(item ?? "new"); }
+  useEffect(() => {
+    if (params.get("action") !== "new" || !query.isSuccess) return;
+    const nextForm = { ...emptyBanner, order: Math.max(-1, ...banners.map(item => item.order ?? 0)) + 1 }; setForm(nextForm); setInitialForm(nextForm);
+    setEditor("new");
+    const next = new URLSearchParams(params); next.delete("action"); setParams(next, { replace: true });
+  }, [params, setParams, query.isSuccess, banners]);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (editor === null || getBannerUrlError(form.link) || getBannerUrlError(form.bgImg)) return; if (editor === "new") await createMutation.mutateAsync(form); else await updateMutation.mutateAsync({ id: editor.id, input: form }); setEditor(null); toast.success(editor === "new" ? "Destaque publicado" : "Destaque atualizado"); }
+  async function confirmDelete() { if (!deleteItem) return; await deleteMutation.mutateAsync(deleteItem.id); setDeleteItem(null); setEditor(null); toast.success("Destaque excluído"); }
+  function reorder(from: number, to: number) { reorderMutation.mutate(moveInArray(banners, from, to)); }
+  return <SitePageShell title="Destaques" description="Gerencie os avisos da página inicial." publicHref={`/${tenantSlug}`} action={{ kind: "create", label: "Novo destaque", icon: Plus, onClick: () => openEditor() }}>
+    <AdminSurface variant="flush" labelledBy="highlights-title"><div className="flex flex-wrap items-center justify-between gap-3"><h2 id="highlights-title" className="m-0 text-base font-semibold leading-6">{query.isLoading ? "Carregando destaques…" : query.isError ? "Destaques publicados" : `${banners.length} ${banners.length === 1 ? "destaque" : "destaques"}`}</h2>{query.isSuccess && banners.length > 1 ? <button type="button" aria-pressed={organizing} aria-controls="highlight-gallery" disabled={pending || reorderMutation.isPending} onClick={() => setOrganizing(!organizing)} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors motion-reduce:transition-none ${organizing ? "bg-primary text-white hover:bg-primary-hover" : "text-primary hover:bg-selection"}`}>{organizing ? <Check size={18} aria-hidden="true" /> : <ArrowUpDown size={18} aria-hidden="true" />}{organizing ? "Concluir organização" : "Organizar destaques"}</button> : null}</div>{organizing ? <p role="status" className="m-0 mt-2 text-sm leading-6 text-muted">Arraste os destaques ou use o menu para mover. A ordem é salva automaticamente.</p> : null}<MutationNotice className="my-4" error={editor === null && !deleteItem ? mutationError : null} />{query.isLoading ? <HighlightCardsSkeleton /> : query.isError ? <QueryError title="Não foi possível carregar os destaques" onRetry={() => query.refetch()} compact /> : banners.length ? <div className="pt-4"><BannerList banners={banners} organizing={organizing} disabled={pending} reordering={reorderMutation.isPending} onEdit={openEditor} onReorder={reorder} /></div> : <EmptyResource icon={<Sparkles size={21} />} title="Nenhum destaque publicado" description="Publique o primeiro comunicado para exibi-lo no carrossel da página inicial." />}<p className="m-0 mt-4 text-sm leading-6 text-muted">No site, o Evangelho do dia aparece antes dos destaques e é atualizado automaticamente.</p></AdminSurface>
+    <AdminFormDialog wide open={editor !== null} eyebrow="Página inicial" title={editor === "new" ? "Novo destaque" : "Editar destaque"} submitLabel={editor === "new" ? "Publicar" : "Salvar alterações"} pending={pending} dirty={JSON.stringify(form) !== JSON.stringify(initialForm)} submitDisabled={editor !== "new" && JSON.stringify(form) === JSON.stringify(initialForm)} submitHint={editor !== "new" && JSON.stringify(form) === JSON.stringify(initialForm) ? "Faça uma alteração para habilitar o salvamento." : undefined} onClose={() => setEditor(null)} onSubmit={(event) => { void submit(event).catch(() => undefined); }} onDelete={editor && editor !== "new" ? () => setDeleteItem(editor) : undefined}><MutationNotice error={mutationError} /><BannerFields form={form} onChange={setForm} /></AdminFormDialog>
+    <DeleteDialog error={deleteMutation.error} open={Boolean(deleteItem)} title="Excluir destaque?" description={deleteItem ? `“${deleteItem.titulo}” deixará de aparecer na página inicial.` : ""} pending={deleteMutation.isPending} onClose={() => setDeleteItem(null)} onConfirm={() => { void confirmDelete().catch(() => undefined); }} />
   </SitePageShell>;
 }
 
 export function AdminChannelsPage() {
   const { tenantSlug = "" } = useParams();
+  const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["admin", "links", tenantSlug], queryFn: () => getAdminTenantLinks(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
   const links = useMemo(() => [...(query.data ?? [])].sort((a, b) => a.order - b.order), [query.data]);
+  const visibleCount = links.filter((item) => item.isActive !== false).length;
+  const hiddenCount = links.length - visibleCount;
   const [editor, setEditor] = useState<PublicLink | "new" | null>(null);
   const [form, setForm] = useState<UpsertLinkRequest>(emptyLink);
+  const [initialForm, setInitialForm] = useState<UpsertLinkRequest>(emptyLink);
   const [deleteItem, setDeleteItem] = useState<PublicLink | null>(null);
-  const [feedback, setFeedback] = useState<string>();
   const [validationError, setValidationError] = useState<string>();
   const refresh = async () => Promise.all([queryClient.invalidateQueries({ queryKey: ["admin", "links", tenantSlug] }), queryClient.invalidateQueries({ queryKey: ["links", tenantSlug] })]);
   const createMutation = useMutation({ mutationFn: (input: UpsertLinkRequest) => createTenantLink(tenantSlug, input), onSuccess: refresh });
   const updateMutation = useMutation({ mutationFn: ({ id, input }: { id: string; input: UpsertLinkRequest }) => updateTenantLink(tenantSlug, id, input), onSuccess: refresh });
   const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTenantLink(tenantSlug, id), onSuccess: refresh });
-  const reorderMutation = useMutation({ mutationFn: async ({ item, neighbor }: { item: PublicLink; neighbor: PublicLink }) => Promise.all([updateTenantLink(tenantSlug, item.id, linkRequest(item, neighbor.order)), updateTenantLink(tenantSlug, neighbor.id, linkRequest(neighbor, item.order))]), onSuccess: refresh });
-  const visibilityMutation = useMutation({ mutationFn: (item: PublicLink) => updateTenantLink(tenantSlug, item.id, { ...linkRequest(item, item.order), isActive: item.isActive === false }), onSuccess: async () => { await refresh(); setFeedback("Visibilidade atualizada"); } });
-  const pending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || reorderMutation.isPending || visibilityMutation.isPending;
-  const mutationError = createMutation.error || updateMutation.error || deleteMutation.error || reorderMutation.error || visibilityMutation.error;
-  function openEditor(item?: PublicLink) { setFeedback(undefined); setValidationError(undefined); setForm(item ? linkRequest(item, item.order) : { ...emptyLink, order: links.length }); setEditor(item ?? "new"); }
-  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (editor === null) return; if (!isValidDestination(form.url)) { setValidationError("Informe um site, e-mail ou telefone válido."); return; } setValidationError(undefined); if (editor === "new") await createMutation.mutateAsync(form); else await updateMutation.mutateAsync({ id: editor.id, input: form }); setEditor(null); setFeedback(editor === "new" ? "Canal criado" : "Canal atualizado"); }
-  async function confirmDelete() { if (!deleteItem) return; await deleteMutation.mutateAsync(deleteItem.id); setDeleteItem(null); setEditor(null); setFeedback("Canal excluído"); }
-  function move(item: PublicLink, direction: -1 | 1) { const index = links.findIndex((candidate) => candidate.id === item.id); const neighbor = links[index + direction]; if (neighbor) reorderMutation.mutate({ item, neighbor }); }
-  return <SitePageShell title="Canais oficiais" description="Links de contato e redes sociais disponíveis aos fiéis." publicHref={`/${tenantSlug}/links`} action={<button type="button" onClick={() => openEditor()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-3.5 text-xs font-bold text-white"><Plus size={15} /> Novo canal</button>}>
-    <section className="overflow-hidden border-y border-slate-200 bg-white md:rounded-2xl md:border"><div className="flex items-start justify-between gap-3 px-4 py-4 md:px-5"><div className="min-w-0"><h2 className="m-0 text-sm font-bold">Ordem de publicação</h2><p className="m-0 mt-1 text-xs font-semibold text-emerald-700">{query.isLoading ? "Verificando canais" : `${links.filter((item) => item.isActive !== false).length} de ${links.length} visíveis no site`}</p><p className="m-0 mt-1 max-w-2xl text-xs leading-5 text-slate-600">Os ocultos continuam disponíveis para edição.</p></div><button type="button" onClick={() => openEditor()} className="inline-flex h-10 flex-none items-center gap-1.5 rounded-xl bg-slate-950 px-3 text-xs font-bold text-white md:hidden" aria-label="Novo canal"><Plus size={16} /> Novo</button></div><MutationNotice className="px-4 pb-3 md:px-5" success={feedback} error={mutationError} />{query.isLoading ? <RowsSkeleton count={5} /> : query.isError ? <QueryError title="Não foi possível carregar os canais" onRetry={() => query.refetch()} compact /> : links.length ? <div className="divide-y divide-slate-100">{links.map((link, index) => <ChannelRow key={link.id} link={link} index={index} total={links.length} disabled={pending} onEdit={() => openEditor(link)} onMove={(direction) => move(link, direction)} onToggle={() => visibilityMutation.mutate(link)} />)}</div> : <EmptyResource icon={<Link2 size={21} />} title="Nenhum canal cadastrado" description="Adicione os contatos e redes sociais oficiais da paróquia." action="Criar canal" onAction={() => openEditor()} />}</section>
-    <AdminFormDialog open={editor !== null} eyebrow="Canais oficiais" title={editor === "new" ? "Novo canal" : "Editar canal"} submitLabel={editor === "new" ? "Criar canal" : "Salvar alterações"} pending={pending} onClose={() => setEditor(null)} onSubmit={submit} onDelete={editor && editor !== "new" ? () => setDeleteItem(editor) : undefined}><LinkFields form={form} onChange={setForm} validationError={validationError} /></AdminFormDialog>
-    <DeleteDialog open={Boolean(deleteItem)} title="Excluir canal?" description={deleteItem ? `“${deleteItem.title}” será removido definitivamente da gestão e do site público.` : ""} pending={deleteMutation.isPending} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />
-  </SitePageShell>;
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: PublicLink[]) => {
+      const changed = reordered.map((link, position) => ({ link, position })).filter(({ link, position }) => link.order !== position);
+      const results = await Promise.allSettled(changed.map(({ link, position }) => updateTenantLink(tenantSlug, link.id, linkRequest(link, position))));
+      const failure = results.find(result => result.status === "rejected");
+      if (failure) throw failure.reason;
+    },
+    onMutate: async (reordered) => {
+      await Promise.all([queryClient.cancelQueries({ queryKey: ["admin", "links", tenantSlug] }), queryClient.cancelQueries({ queryKey: ["links", tenantSlug] })]);
+      const previous = queryClient.getQueryData<PublicLink[]>(["admin", "links", tenantSlug]);
+      queryClient.setQueryData<PublicLink[]>(["admin", "links", tenantSlug], reordered.map((link, position) => ({ ...link, order: position })));
+      return { previous };
+    },
+    onError: (_error, _variables, context) => { if (context?.previous) queryClient.setQueryData(["admin", "links", tenantSlug], context.previous); },
+    onSettled: refresh,
+  });
+  const pending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+  const saveError = createMutation.error || updateMutation.error;
+  function openEditor(item?: PublicLink) { const next = item ? linkRequest(item, item.order) : { ...emptyLink, order: links.length }; createMutation.reset(); updateMutation.reset(); deleteMutation.reset(); reorderMutation.reset(); setValidationError(undefined); setForm(next); setInitialForm(next); setEditor(item ?? "new"); }
+  useEffect(() => {
+    if (params.get("action") !== "new" || !query.isSuccess) return;
+    const nextForm = { ...emptyLink, order: Math.max(-1, ...links.map(item => item.order)) + 1 }; setForm(nextForm); setInitialForm(nextForm);
+    setEditor("new");
+    const next = new URLSearchParams(params); next.delete("action"); setParams(next, { replace: true });
+  }, [params, setParams, query.isSuccess, links]);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (editor === null) return; if (!isValidDestination(form.url)) { setValidationError("Informe um site, e-mail ou telefone válido."); return; } setValidationError(undefined); if (editor === "new") await createMutation.mutateAsync(form); else await updateMutation.mutateAsync({ id: editor.id, input: form }); setEditor(null); toast.success(editor === "new" ? "Canal criado" : "Canal atualizado"); }
+  async function confirmDelete() { if (!deleteItem) return; await deleteMutation.mutateAsync(deleteItem.id); setDeleteItem(null); setEditor(null); toast.success("Canal excluído"); }
+  const busy = pending || reorderMutation.isPending;
+  const dirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+  function reorder(from: number, to: number) {
+    if (busy || from === to || to < 0 || to >= links.length) return;
+    reorderMutation.mutate(moveInArray(links, from, to), {
+      onSuccess: () => toast.success("Ordem dos canais salva"),
+    });
+  }
+  function toggleVisibility(link: PublicLink) {
+    if (busy) return;
+    const isActive = link.isActive === false;
+    updateMutation.mutate({ id: link.id, input: { ...linkRequest(link, link.order), isActive } }, {
+      onSuccess: () => toast.success(isActive ? "Canal visível no site" : "Canal oculto no site"),
+    });
+  }
+
+  return <AdminPage header={<AdminPageHeader
+    title="Canais oficiais"
+    description="Gerencie os links de contato publicados para os fiéis."
+    descriptionClassName="hidden md:block"
+    publicHref={`/${tenantSlug}/links`}
+    publicLabel="Ver canais no site"
+    primaryAction={{ kind: "create", label: "Novo canal", icon: Plus, disabled: busy, onClick: () => openEditor() }}
+  />}>
+    <AdminPageContent width="wide">
+      <AdminSurface variant="flush" labelledBy="channels-title">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line pb-3">
+          <h2 id="channels-title" className="m-0 text-base font-semibold">Canais cadastrados</h2>
+          <p role="status" className="m-0 text-sm text-muted">
+            {reorderMutation.isPending ? "Salvando ordem…" : updateMutation.isPending && editor === null ? "Atualizando visibilidade…" : query.isLoading ? "Carregando…" : query.isSuccess ? `${visibleCount} ${visibleCount === 1 ? "visível" : "visíveis"} · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}` : null}
+          </p>
+        </div>
+        {reorderMutation.isError ? <AdminNotice className="my-4">Não foi possível salvar toda a ordem. Confira a lista e tente novamente.</AdminNotice> : null}
+        {editor === null && updateMutation.isError ? <AdminNotice className="my-4">Não foi possível atualizar a visibilidade. Tente novamente.</AdminNotice> : null}
+        {query.isLoading ? <RowsSkeleton count={5} /> : query.isError ? (
+          <QueryError title="Não foi possível carregar os canais" onRetry={() => query.refetch()} />
+        ) : links.length ? (
+          <ChannelList links={links} disabled={busy} onEdit={openEditor} onDelete={setDeleteItem} onToggleVisibility={toggleVisibility} onReorder={reorder} />
+        ) : (
+          <EmptyResource icon={<Link2 size={21} />} title="Nenhum canal cadastrado" description="Use Novo canal para publicar o primeiro contato, site ou rede social da paróquia." />
+        )}
+      </AdminSurface>
+    </AdminPageContent>
+    <AdminFormDialog wide open={editor !== null} eyebrow="" title={editor === "new" ? "Novo canal" : "Editar canal"}
+      submitLabel={editor === "new" ? "Criar canal" : "Salvar alterações"} pending={pending} dirty={dirty}
+      submitDisabled={editor !== "new" && !dirty} onClose={() => setEditor(null)}
+      onSubmit={event => { void submit(event).catch(() => undefined); }}
+      onDelete={editor && editor !== "new" ? () => setDeleteItem(editor) : undefined}>
+      <MutationNotice className="mb-4" error={saveError} />
+      <AdminChannelFields form={form} onChange={next => {
+        if (next.url !== form.url) setValidationError(undefined);
+        setForm(next);
+      }} validationError={validationError} />
+    </AdminFormDialog>
+    <DeleteDialog error={deleteMutation.error} open={Boolean(deleteItem)} title="Excluir canal?" description={deleteItem ? `“${deleteItem.title}” será removido definitivamente da gestão e do site público.` : ""} pending={deleteMutation.isPending} onClose={() => setDeleteItem(null)} onConfirm={() => { void confirmDelete().catch(() => undefined); }} />
+  </AdminPage>;
 }
 
-function SitePageShell({ title, description, publicHref, action, children }: { title: string; description: string; publicHref: string; action?: ReactNode; children: ReactNode }) {
-  const { tenantSlug = "" } = useParams();
-  const base = `/${tenantSlug}/admin/site`;
-  return <section className="min-h-[calc(100dvh-4rem)] bg-stone-50 text-slate-950 md:min-h-dvh"><AdminPageHeader eyebrow="Site público" title={title} description={description} actions={<><Link to={publicHref} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50"><ExternalLink size={15} /> Conferir no site</Link>{action}</>} /><nav className="sticky top-16 z-30 flex border-b border-slate-200 bg-white px-2 md:static md:mx-auto md:mt-5 md:max-w-7xl md:rounded-xl md:border md:px-1 lg:max-w-[calc(80rem-4rem)]" aria-label="Gestão do site público"><SiteTab to={`${base}/pagina-inicial`} icon={<PanelsTopLeft size={15} />}>Página inicial</SiteTab><SiteTab to={`${base}/destaques`} icon={<Sparkles size={15} />}>Destaques</SiteTab><SiteTab to={`${base}/canais`} icon={<Link2 size={15} />}>Canais</SiteTab></nav><div className="mx-auto max-w-7xl py-4 md:px-6 md:py-5 lg:px-8">{children}</div></section>;
+function SitePageShell({ title, description, publicHref, action, children, contentClassName, wide = false }: { title: string; description: string; publicHref: string; action?: AdminHeaderAction; children: ReactNode; contentClassName?: string; wide?: boolean }) {
+  return <AdminPage header={<AdminPageHeader title={title} description={description} publicHref={publicHref} primaryAction={action} />}><AdminPageContent width={wide ? "wide" : "standard"} className={contentClassName}>{children}</AdminPageContent></AdminPage>;
+}
+function ContentBlockRow({ icon, tone, label, value, href }: { icon: ReactNode; tone: string; label: string; value: string; href: string }) { return <Link to={href} className="flex min-h-[4.5rem] items-center gap-3 border-t border-line px-4 py-3 transition hover:bg-selection/35 md:px-5"><span className={`grid h-11 w-11 flex-none place-items-center rounded-xl ${tone}`}>{icon}</span><span className="min-w-0 flex-1"><strong className="block text-sm">{label}</strong><small className="mt-0.5 block truncate text-sm text-muted">{value}</small></span><ChevronRight size={16} className="flex-none text-muted" /></Link>; }
+
+const dragHandleClass = "grid h-11 flex-none touch-none place-items-center rounded-lg text-muted hover:bg-selection/35 hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+
+function DragHandle({ label, handleProps, onKeyDown, disabled = false }: { label: string; handleProps: { onPointerDown: (e: React.PointerEvent) => void; style: React.CSSProperties }; onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void; disabled?: boolean }) {
+  return <button type="button" disabled={disabled} aria-label={`Arrastar ${label} para reordenar${onKeyDown ? ". Use as setas para cima ou para baixo." : ""}`} className={`${dragHandleClass} w-11`} onPointerDown={handleProps.onPointerDown} onKeyDown={onKeyDown} style={handleProps.style}><GripVertical size={18} aria-hidden="true" /></button>;
 }
 
-function SiteTab({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) { return <NavLink to={to} className={({ isActive }) => `flex min-h-12 flex-1 items-center justify-center gap-1.5 border-b-2 px-1 text-center text-[0.7rem] font-bold transition md:min-h-10 md:flex-none md:rounded-lg md:border-b-0 md:px-4 md:text-xs ${isActive ? "border-amber-600 text-amber-900 md:bg-amber-50" : "border-transparent text-slate-500 hover:text-slate-950"}`}>{icon}<span>{children}</span></NavLink>; }
-function FormSection({ title, description, children }: { title: string; description: string; children: ReactNode }) { return <section className="border-b border-slate-100 px-4 py-5 md:px-5"><h2 className="m-0 text-sm font-bold">{title}</h2><p className="m-0 mt-0.5 text-xs text-slate-600">{description}</p><div className="mt-4">{children}</div></section>; }
-function ContentBlockRow({ icon, tone, label, value, href }: { icon: ReactNode; tone: string; label: string; value: string; href: string }) { return <Link to={href} className="flex min-h-[4.5rem] items-center gap-3 border-t border-slate-100 px-4 py-3 transition hover:bg-stone-50 md:px-5"><span className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${tone}`}>{icon}</span><span className="min-w-0 flex-1"><strong className="block text-sm">{label}</strong><small className="mt-0.5 block truncate text-xs text-slate-600">{value}</small></span><ChevronRight size={16} className="flex-none text-slate-400" /></Link>; }
-
-function HomePreview({ compact = false, tenantSlug, tenantName, city, headerConfig, telefone, confessionSchedule }: { compact?: boolean; tenantSlug: string; tenantName: string; city: string; headerConfig?: HomeHeaderConfig | null; telefone?: string | null; confessionSchedule?: ConfessionScheduleItem[] | null }) {
-  const publicHref = `/${tenantSlug}`;
-  return <aside className={`${compact ? "overflow-hidden border-y border-slate-200 bg-white md:hidden" : "hidden overflow-hidden border-y border-slate-200 bg-white md:sticky md:top-5 md:block md:rounded-2xl md:border"}`} aria-label={compact ? "Prévia rápida da página inicial" : "Prévia da página inicial"}><div className="pointer-events-none" aria-hidden="true" inert><HomeHeader preview tenantName={tenantName} cidade={city} headerConfig={headerConfig} homeHref={publicHref} linksHref={`${publicHref}/links`} agendaHref={`${publicHref}/calendario`} contactHref={getBrazilianWhatsappHref(telefone)} confessionSchedule={confessionSchedule} /></div><div className="relative z-[1] -mt-7 flex min-h-16 items-center justify-between gap-3 rounded-t-[2rem] bg-white px-4 pt-3"><span className="flex min-w-0 items-center gap-2 text-[0.68rem] font-bold text-slate-600"><span className="h-2 w-2 flex-none rounded-full bg-emerald-500" />Prévia do site público</span><Link to={publicHref} className="inline-flex min-h-10 flex-none items-center gap-1.5 rounded-xl px-2 text-[0.68rem] font-bold text-slate-700 transition hover:bg-slate-100" aria-label="Abrir página pública completa">Abrir <ExternalLink size={13} /></Link></div></aside>;
+function BannerList({ banners, organizing, disabled, reordering, onEdit, onReorder }: { banners: PublicHomeBanner[]; organizing: boolean; disabled: boolean; reordering: boolean; onEdit: (item: PublicHomeBanner) => void; onReorder: (from: number, to: number) => void }) {
+  const { handleProps, draggingIndex, overIndex } = useDragReorder(banners.length, (from, to) => { if (organizing && !disabled && !reordering) onReorder(from, to); }, "grid");
+  return <>
+    <div id="highlight-gallery" className="grid items-start gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-label="Destaques publicados" aria-busy={reordering}>
+      {banners.map((banner, index) => (
+        <article key={banner.id} data-drag-item aria-label={banner.titulo} className={`flex w-full min-w-0 max-w-sm flex-col overflow-hidden rounded-2xl border bg-surface transition-colors motion-reduce:transition-none ${draggingIndex === index ? "border-primary bg-selection/40" : overIndex === index && draggingIndex !== null ? "border-primary ring-2 ring-focus/20" : "border-line"}`}>
+          {organizing ? <header className="flex min-h-14 items-center gap-2 border-b border-line/60 bg-selection/30 px-2 py-1">
+            <DragHandle disabled={disabled || reordering} label={`destaque ${banner.titulo}`} handleProps={handleProps(index)} onKeyDown={(event) => { if (event.key === "ArrowUp" && index > 0) { event.preventDefault(); onReorder(index, index - 1); } else if (event.key === "ArrowDown" && index < banners.length - 1) { event.preventDefault(); onReorder(index, index + 1); } }} />
+            <span className="min-w-0 flex-1 text-sm font-semibold leading-5 text-ink">{index + 1}º destaque</span>
+            <AdminActionMenu quiet label={banner.titulo} disabled={disabled || reordering} actions={[
+              { label: 'Mover para cima', icon: ArrowUp, disabled: index === 0, onClick: () => onReorder(index, index - 1) },
+              { label: 'Mover para baixo', icon: ArrowDown, disabled: index === banners.length - 1, onClick: () => onReorder(index, index + 1) },
+            ]} />
+          </header> : null}
+          <div className="flex min-w-0 flex-1 flex-col"><HighlightContent banner={banner} variant="gallery" /></div>
+          {!organizing ? <footer className="px-4 pb-3 pt-1">
+            <button type="button" onClick={() => onEdit(banner)} disabled={disabled || reordering} aria-label={`Editar destaque ${banner.titulo}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-selection motion-reduce:transition-none"><Pencil size={16} aria-hidden="true" />Editar</button>
+          </footer> : null}
+        </article>
+      ))}
+    </div>
+    {reordering ? <p role="status" className="m-0 mt-3 flex items-center gap-2 text-sm text-muted"><LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />Salvando ordem dos destaques…</p> : null}
+  </>;
 }
 
-function BannerRow({ banner, index, total, disabled, onEdit, onMove }: { banner: PublicHomeBanner; index: number; total: number; disabled: boolean; onEdit: () => void; onMove: (direction: -1 | 1) => void }) {
-  return <article className="grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 md:grid-cols-[3.25rem_minmax(0,1fr)_auto] md:px-5"><span className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-amber-50 text-amber-800" style={{ background: banner.bgColor || undefined }}>{banner.bgImg ? <img src={banner.bgImg} alt="" className="h-full w-full object-cover" /> : <Sparkles size={18} />}</span><span className="min-w-0"><span className="flex min-w-0 items-center gap-2"><strong className="truncate text-sm">{banner.titulo}</strong><small className="hidden flex-none rounded-full bg-slate-100 px-2 py-0.5 text-[0.62rem] font-bold text-slate-600 sm:inline">{formatBannerType(banner.tipo)}</small></span><small className="mt-0.5 block truncate text-xs text-slate-600">{banner.mensagem || "Sem texto complementar"}</small>{banner.link ? <small className="mt-0.5 block truncate text-[0.68rem] text-slate-500">{banner.link}</small> : null}</span><div className="flex items-center"><OrderControls index={index} total={total} disabled={disabled} label={banner.titulo} onMove={onMove} /><button type="button" onClick={onEdit} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950" aria-label={`Editar destaque ${banner.titulo}`}><Pencil size={16} /></button></div></article>;
+function HighlightCardsSkeleton() {
+  return <div role="status" aria-label="Carregando destaques" className="grid gap-6 pt-4 sm:grid-cols-2 xl:grid-cols-3">{[0, 1].map(item => <div key={item} className="overflow-hidden rounded-2xl border border-line p-5" aria-hidden="true"><div className="animate-pulse motion-reduce:animate-none"><span className="block h-5 w-2/3 rounded bg-selection" /><span className="mt-4 block h-4 w-full rounded bg-selection" /><span className="mt-2 block h-4 w-4/5 rounded bg-selection" /></div><div className="mt-5 h-11 w-24 rounded-xl bg-selection/40" /></div>)}<span className="sr-only">Carregando destaques…</span></div>;
 }
 
-function ChannelRow({ link, index, total, disabled, onEdit, onMove, onToggle }: { link: PublicLink; index: number; total: number; disabled: boolean; onEdit: () => void; onMove: (direction: -1 | 1) => void; onToggle: () => void }) {
-  const Icon = resolveLinkIcon(link); const color = resolveLinkColor(link);
-  return <article className={`grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 md:grid-cols-[3.25rem_minmax(0,1fr)_auto] md:px-5 ${link.isActive === false ? "bg-slate-50/60" : ""}`}><span className="grid h-12 w-12 place-items-center rounded-xl" style={{ backgroundColor: `${color}18`, color }}><Icon size={18} /></span><span className="min-w-0"><strong className="block truncate text-sm">{link.title}</strong><span className="mt-0.5 flex min-w-0 items-center gap-2"><small className={`flex flex-none items-center gap-1 text-[0.62rem] font-bold ${link.isActive === false ? "text-slate-500" : "text-emerald-700"}`}><span className={`h-1.5 w-1.5 rounded-full ${link.isActive === false ? "bg-slate-400" : "bg-emerald-500"}`} />{link.isActive === false ? "Oculto" : "Publicado"}</small><small className="min-w-0 truncate text-xs text-slate-600">{link.url}</small></span></span><div className="flex items-center"><OrderControls index={index} total={total} disabled={disabled} label={link.title} onMove={onMove} /><button type="button" onClick={onToggle} disabled={disabled} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 disabled:opacity-50" aria-label={`${link.isActive === false ? "Publicar" : "Ocultar"} ${link.title}`}>{link.isActive === false ? <Eye size={16} /> : <EyeOff size={16} />}</button><button type="button" onClick={onEdit} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950" aria-label={`Editar canal ${link.title}`}><Pencil size={16} /></button></div></article>;
+function ChannelList({ links, disabled, onEdit, onDelete, onToggleVisibility, onReorder }: {
+  links: PublicLink[];
+  disabled: boolean;
+  onEdit: (item: PublicLink) => void;
+  onDelete: (item: PublicLink) => void;
+  onToggleVisibility: (item: PublicLink) => void;
+  onReorder: (from: number, to: number) => void;
+}) {
+  const { handleProps, draggingIndex, overIndex } = useDragReorder(links.length, onReorder);
+  return <ul aria-label="Canais cadastrados" className="m-0 list-none divide-y divide-line/70 p-0">
+    {links.map((link, index) => {
+      const hidden = link.isActive === false;
+      const Icon = resolveLinkIcon(link);
+      const color = resolveLinkColor(link);
+      const destination = getLinkDestination(link.url) ?? link.url;
+      const href = isValidDestination(link.url) ? normalizeLinkUrl(link.url) : null;
+      const dragging = draggingIndex === index;
+      const dropTarget = draggingIndex !== null && !dragging && overIndex === index;
+      const dropLine = dropTarget ? (index < draggingIndex ? "before:top-0" : "before:bottom-0") : "";
+      return <li key={link.id} data-drag-item className={`relative grid min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1 py-1.5 ${dragging ? "bg-selection" : ""} ${dropTarget ? "bg-selection/30 before:absolute before:inset-x-0 before:h-0.5 before:bg-primary" : ""} ${dropLine}`}>
+        <DragHandle disabled={disabled || links.length < 2} label={`canal ${link.title}`} handleProps={handleProps(index)} onKeyDown={event => {
+          if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+          event.preventDefault();
+          onReorder(index, index + (event.key === "ArrowUp" ? -1 : 1));
+        }} />
+        <button type="button" onClick={() => onEdit(link)} disabled={disabled} aria-label={`Editar canal ${link.title}`}
+          className="flex min-h-12 min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 text-left hover:bg-selection/40 active:bg-selection focus-visible:outline-2 focus-visible:outline-focus sm:gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${color}18`, color }}><Icon size={18} aria-hidden="true" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <strong className="min-w-0 text-[15px] leading-5 [overflow-wrap:anywhere]">{link.title}</strong>
+              {hidden ? <span className="inline-flex items-center gap-1 text-xs font-medium text-muted"><EyeOff size={13} aria-hidden="true" />Oculto</span> : null}
+            </span>
+            <span className="block truncate text-sm leading-5 text-muted" title={link.url}>{destination}</span>
+          </span>
+        </button>
+        <AdminActionMenu quiet label={link.title} disabled={disabled} actions={[
+          { label: "Editar canal", icon: Pencil, onClick: () => onEdit(link) },
+          ...(href ? [{ label: "Abrir destino", icon: ExternalLink, onClick: () => {
+            if (/^https?:/i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
+            else window.location.assign(href);
+          } }] : []),
+          { label: hidden ? "Mostrar no site" : "Ocultar no site", icon: hidden ? Eye : EyeOff, onClick: () => onToggleVisibility(link) },
+          { label: "Mover para cima", icon: ArrowUp, disabled: index === 0, onClick: () => onReorder(index, index - 1) },
+          { label: "Mover para baixo", icon: ArrowDown, disabled: index === links.length - 1, onClick: () => onReorder(index, index + 1) },
+          { label: `Excluir canal ${link.title}`, icon: Trash2, danger: true, onClick: () => onDelete(link) },
+        ]} />
+      </li>;
+    })}
+  </ul>;
 }
 
-function OrderControls({ index, total, disabled, label, onMove }: { index: number; total: number; disabled: boolean; label: string; onMove: (direction: -1 | 1) => void }) { return <div className="hidden items-center justify-end md:flex"><button type="button" disabled={disabled || index === 0} onClick={() => onMove(-1)} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 disabled:opacity-25" aria-label={`Mover ${label} para cima`}><ArrowUp size={15} /></button><button type="button" disabled={disabled || index === total - 1} onClick={() => onMove(1)} className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 disabled:opacity-25" aria-label={`Mover ${label} para baixo`}><ArrowDown size={15} /></button></div>; }
+function CharCounter({ value, max }: { value: number; max: number }) {
+  const over = value > max;
+  return <span className={`text-sm font-semibold tabular-nums ${over ? "text-danger" : value > max * 0.85 ? "text-warning" : "text-muted"}`}>{value}/{max}</span>;
+}
 
 function BannerFields({ form, onChange }: { form: UpsertBannerRequest; onChange: (form: UpsertBannerRequest) => void }) {
-  return <div className="grid gap-5"><div className="relative flex min-h-40 flex-col justify-end overflow-hidden rounded-xl bg-slate-900 p-4 text-white" style={{ background: form.bgColor?.trim() || "linear-gradient(135deg, #f59e0b, #92400e)" }}>{form.bgImg ? <img src={form.bgImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" /> : null}<span className="absolute inset-0 bg-slate-950/30" /><div className="relative"><small className="font-bold text-white/75">{formatBannerType(form.tipo)}</small><strong className="mt-1 block text-lg">{form.titulo || "Título do destaque"}</strong>{form.mensagem ? <span className="mt-1 block text-xs text-white/80">{form.mensagem}</span> : null}</div></div><div className="grid gap-4 sm:grid-cols-2"><label className={labelClassName}>Tipo<select value={form.tipo ?? "aviso"} onChange={(event) => onChange({ ...form, tipo: event.target.value })} className={fieldClassName}><option value="aviso">Aviso</option><option value="campanha">Campanha</option><option value="convite">Convite</option><option value="comunicado">Comunicado</option></select></label><label className={labelClassName}>Posição<input type="number" min="0" value={form.order ?? 0} onChange={(event) => onChange({ ...form, order: Number(event.target.value) })} className={fieldClassName} /></label><label className={`${labelClassName} sm:col-span-2`}>Título<input required value={form.titulo} onChange={(event) => onChange({ ...form, titulo: event.target.value })} className={fieldClassName} /></label><label className={`${labelClassName} sm:col-span-2`}>Mensagem<textarea value={form.mensagem ?? ""} onChange={(event) => onChange({ ...form, mensagem: event.target.value })} className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-slate-200 p-3 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100" /></label><label className={`${labelClassName} sm:col-span-2`}>URL da imagem<input type="url" value={form.bgImg ?? ""} onChange={(event) => onChange({ ...form, bgImg: event.target.value })} className={fieldClassName} placeholder="https://..." /></label><label className={`${labelClassName} sm:col-span-2`}>Link opcional<input value={form.link ?? ""} onChange={(event) => onChange({ ...form, link: event.target.value })} className={fieldClassName} placeholder="https://..." /></label></div></div>;
+  const linkError = getBannerUrlError(form.link);
+  const imageError = getBannerUrlError(form.bgImg);
+  const previewRef = useRef<HTMLHeadingElement>(null);
+  const titleLength = form.titulo.length;
+  const messageLength = (form.mensagem ?? "").length;
+  const preview: PublicHomeBanner = { ...form, id: "preview", titulo: form.titulo.trim() || "Título do destaque", bgImg: imageError ? "" : form.bgImg, link: linkError ? "" : form.link };
+  return <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+    <div className="min-w-0 space-y-6">
+      <section aria-labelledby="banner-content-title" className="grid gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h3 id="banner-content-title" className="m-0 text-base font-semibold">Conteúdo</h3>
+          <button type="button" onClick={() => previewRef.current?.scrollIntoView({ block: "start" })} className="inline-flex min-h-11 flex-none items-center gap-2 rounded-xl px-3 text-sm font-semibold text-primary transition-colors hover:bg-selection focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:hidden"><Eye size={17} aria-hidden="true" />Ver prévia</button>
+        </div>
+      <label className={labelClassName}>
+        <span className="flex items-center justify-between">Título<CharCounter value={titleLength} max={BANNER_TITLE_MAX} /></span>
+        <input required aria-label="Título" maxLength={BANNER_TITLE_MAX} value={form.titulo} onChange={(event) => onChange({ ...form, titulo: event.target.value })} className={fieldClassName} placeholder="O que deseja anunciar?" />
+      </label>
+      <label className={labelClassName}>
+        <span className="flex items-center justify-between"><span>Mensagem <span className="font-normal text-muted">(opcional)</span></span><CharCounter value={messageLength} max={BANNER_MESSAGE_MAX} /></span>
+        <textarea aria-label="Mensagem" maxLength={BANNER_MESSAGE_MAX} value={form.mensagem ?? ""} onChange={(event) => onChange({ ...form, mensagem: event.target.value })} className={`${fieldClassName} min-h-24 resize-y`} placeholder="Conte o essencial para quem verá o destaque" />
+      </label>
+
+        <label className={labelClassName}>Para onde o destaque leva <span className="font-normal text-muted">(opcional)</span><input type="text" inputMode="url" autoCapitalize="off" autoCorrect="off" value={form.link ?? ""} onChange={(event) => onChange({ ...form, link: event.target.value })} aria-invalid={Boolean(linkError)} aria-describedby={linkError ? "banner-link-error" : undefined} className={fieldClassName} placeholder="https://site.com/pagina" />{linkError ? <span id="banner-link-error" className="mt-1.5 block text-sm font-semibold text-danger">{linkError}</span> : null}</label>
+        <details className="border-b border-line pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Opções da publicação</summary><div className="pt-2">      <fieldset className="m-0 border-0 p-0">
+        <legend className={`${labelClassName} mb-1.5 p-0`}>Tipo</legend>
+        <div className="flex flex-wrap gap-2">{BANNER_TYPE_OPTIONS.map((option) => {
+          const active = (form.tipo ?? "aviso") === option.value;
+          return <button key={option.value} type="button" aria-pressed={active} onClick={() => onChange({ ...form, tipo: option.value })} className={`inline-flex min-h-11 items-center rounded-xl border px-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${active ? "border-line bg-primary text-white" : "border-line bg-surface text-ink hover:bg-selection/35"}`}>{option.label}</button>;
+        })}</div>
+      </fieldset>
+</div></details>
+      </section>
+      <section aria-labelledby="banner-appearance-title" className="grid gap-4">
+        <h3 id="banner-appearance-title" className="m-0 text-base font-semibold">Aparência</h3>
+      <fieldset className="m-0 border-0 p-0">
+        <legend className={`${labelClassName} mb-1.5 p-0`}>Cor de fundo</legend>
+        <div className="flex flex-wrap gap-2">{BANNER_COLOR_OPTIONS.map((option) => {
+          const active = (form.bgColor ?? "") === option.value;
+          return <button key={option.label} type="button" aria-pressed={active} onClick={() => onChange({ ...form, bgColor: option.value })} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active ? "border-primary bg-selection/40 text-primary" : "border-line bg-surface text-ink hover:bg-selection/30"}`}><span aria-hidden="true" className="h-5 w-5 flex-none rounded-full border border-black/10" style={{ background: option.gradient }} />{option.label}{active ? <Check size={15} aria-hidden="true" /> : null}</button>;
+        })}</div>
+      </fieldset>
+        <label className={labelClassName}>URL da imagem <span className="font-normal text-muted">(opcional)</span><input type="text" inputMode="url" autoCapitalize="off" autoCorrect="off" value={form.bgImg ?? ""} onChange={(event) => onChange({ ...form, bgImg: event.target.value })} aria-invalid={Boolean(imageError)} aria-describedby={imageError ? "banner-image-error" : "banner-image-help"} className={fieldClassName} placeholder="https://site.com/imagem.jpg" />{imageError ? <span id="banner-image-error" className="mt-1.5 block text-sm font-semibold text-danger">{imageError}</span> : <span id="banner-image-help" className="mt-1.5 block text-sm leading-5 text-muted">Cole um link público que comece com http:// ou https:// e abra a imagem sem pedir login. Sem imagem, será usada a cor escolhida.</span>}</label>
+      </section>
+    </div>
+    <aside aria-labelledby="banner-preview-title" className="min-w-0 self-start lg:sticky lg:top-0">
+      <h3 ref={previewRef} id="banner-preview-title" tabIndex={-1} className="m-0 scroll-mt-4 text-base font-semibold">Prévia no celular</h3>
+      <p className="m-0 mb-3 mt-1 text-sm leading-6 text-muted">Acompanhe as alterações antes de publicar.</p>
+      <div className="max-w-sm overflow-hidden rounded-xl border border-line" inert aria-hidden="true"><HighlightContent banner={preview} /></div>
+    </aside>
+  </div>;
 }
 
-function LinkFields({ form, onChange, validationError }: { form: UpsertLinkRequest; onChange: (form: UpsertLinkRequest) => void; validationError?: string }) {
-  const preview: PublicLink = { id: "preview", ...form }; const Icon = resolveLinkIcon(preview); const color = resolveLinkColor(preview);
-  return <div className="grid gap-5"><div className="flex min-h-20 items-center gap-3 rounded-xl bg-slate-50 p-4"><span className="grid h-11 w-11 flex-none place-items-center rounded-lg" style={{ backgroundColor: `${color}18`, color }}><Icon size={19} /></span><span className="min-w-0"><strong className="block truncate text-sm">{form.title || "Nome do canal"}</strong><small className="mt-1 block truncate text-xs text-slate-600">{form.url || "Destino do link"}</small></span></div><div className="grid gap-4 sm:grid-cols-2"><label className={`${labelClassName} sm:col-span-2`}>Título<input required value={form.title} onChange={(event) => onChange({ ...form, title: event.target.value })} className={fieldClassName} /></label><label className={`${labelClassName} sm:col-span-2`}>Destino<input required value={form.url} onChange={(event) => onChange({ ...form, url: event.target.value })} aria-invalid={Boolean(validationError)} aria-describedby={validationError ? "channel-url-error" : undefined} placeholder="site.com, mailto: ou tel:" className={`${fieldClassName} ${validationError ? "border-red-400 focus:border-red-500 focus:ring-red-100" : ""}`} />{validationError ? <span id="channel-url-error" className="mt-1.5 block text-xs font-semibold text-red-700">{validationError}</span> : null}</label><label className={labelClassName}>Ícone<select value={form.iconKey ?? "link"} onChange={(event) => onChange({ ...form, iconKey: event.target.value })} className={fieldClassName}><option value="site">Site</option><option value="whatsapp">WhatsApp</option><option value="facebook">Facebook</option><option value="instagram">Instagram</option><option value="youtube">YouTube</option><option value="email">E-mail</option><option value="map">Mapa</option><option value="link">Link</option></select></label><label className={labelClassName}>Cor<select value={form.colorKey ?? "slate"} onChange={(event) => onChange({ ...form, colorKey: event.target.value })} className={fieldClassName}><option value="slate">Neutra</option><option value="blue">Azul</option><option value="green">Verde</option><option value="pink">Rosa</option><option value="red">Vermelha</option><option value="orange">Laranja</option><option value="amber">Âmbar</option><option value="indigo">Índigo</option></select></label><label className={labelClassName}>Posição<input type="number" min="0" value={form.order} onChange={(event) => onChange({ ...form, order: Number(event.target.value) })} className={fieldClassName} /></label><label className="flex min-h-11 items-center gap-3 self-end rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700"><input type="checkbox" checked={form.isActive !== false} onChange={(event) => onChange({ ...form, isActive: event.target.checked })} className="h-4 w-4 accent-amber-600" /> Visível no site</label></div></div>;
-}
-
-function DeleteDialog({ open, title, description, pending, onClose, onConfirm }: { open: boolean; title: string; description: string; pending: boolean; onClose: () => void; onConfirm: () => void }) { if (!open) return null; return <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/50 p-4" onMouseDown={onClose}><section role="alertdialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description" onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-5"><div className="flex items-start gap-3"><span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-red-50 text-red-700"><Trash2 size={18} /></span><div><h2 id="delete-dialog-title" className="m-0 text-base font-bold">{title}</h2><p id="delete-dialog-description" className="m-0 mt-1 text-sm leading-5 text-slate-600">{description}</p></div></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={onClose} disabled={pending} className="h-11 rounded-xl px-4 text-xs font-bold text-slate-600">Cancelar</button><button type="button" onClick={onConfirm} disabled={pending} className="inline-flex h-11 items-center gap-2 rounded-xl bg-red-700 px-4 text-xs font-bold text-white disabled:opacity-60">{pending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" size={15} /> : null} Excluir</button></div></section></div>; }
-function QueryError({ title, onRetry, compact = false }: { title: string; onRetry: () => void; compact?: boolean }) { return <div className={`${compact ? "border-t border-slate-100" : "border-y border-slate-200 bg-white md:rounded-2xl md:border"} px-4 py-10 text-center`}><p className="m-0 text-sm font-bold text-slate-800">{title}</p><p className="m-0 mt-1 text-xs text-slate-600">Tente novamente em instantes.</p><button type="button" onClick={onRetry} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-xs font-bold text-white"><RefreshCw size={14} /> Tentar novamente</button></div>; }
-function EmptyResource({ icon, title, description, action, onAction }: { icon: ReactNode; title: string; description: string; action: string; onAction: () => void }) { return <div className="border-t border-slate-100 px-5 py-10 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-slate-100 text-slate-500">{icon}</span><p className="m-0 mt-3 text-sm font-bold">{title}</p><p className="mx-auto mb-0 mt-1 max-w-md text-xs leading-5 text-slate-600">{description}</p><button type="button" onClick={onAction} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-xs font-bold text-white"><Plus size={14} /> {action}</button></div>; }
-function RowsSkeleton({ count = 2 }: { count?: number }) { return <div className="animate-pulse divide-y divide-slate-100" aria-label="Carregando conteúdo">{Array.from({ length: count }, (_, index) => <div key={index} className="flex h-[4.75rem] items-center gap-3 px-4 md:px-5"><span className="h-12 w-12 rounded-xl bg-slate-100" /><span className="flex-1"><span className="block h-3.5 w-1/3 rounded bg-slate-100" /><span className="mt-2 block h-3 w-1/2 rounded bg-slate-100" /></span></div>)}<span className="sr-only" role="status">Carregando...</span></div>; }
-function HomeSkeleton() { return <div className="grid animate-pulse gap-5 md:grid-cols-[minmax(0,1fr)_20rem]"><div className="h-[38rem] border-y border-slate-200 bg-white md:rounded-2xl md:border" /><div className="h-64 border-y border-slate-200 bg-white md:rounded-2xl md:border" /></div>; }
-function MutationNotice({ success, error, className = "" }: { success?: string; error?: Error | null; className?: string }) { if (!success && !error) return null; return <p role="status" className={`m-0 flex items-center gap-1.5 text-xs font-semibold ${error ? "text-red-700" : "text-emerald-700"} ${className}`}>{error ? <X size={14} /> : <Check size={14} />}{error ? "Não foi possível concluir a alteração." : success}</p>; }
+const DeleteDialog = AdminConfirmDialog;
+function QueryError({ title, onRetry, compact = false }: { title: string; onRetry: () => void; compact?: boolean }) { return <div className={`${compact ? "border-t border-line" : "border-y border-line bg-surface md:rounded-2xl md:border"} px-4 py-10 text-center`}><p className="m-0 text-sm font-bold text-ink">{title}</p><p className="m-0 mt-1 text-sm text-muted">Tente novamente em instantes.</p><button type="button" onClick={onRetry} className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white"><RefreshCw size={14} /> Tentar novamente</button></div>; }
+function EmptyResource({ icon, title, description }: { icon: ReactNode; title: string; description: string }) { return <div className="border-t border-line px-5 py-10 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-selection/40 text-muted">{icon}</span><p className="m-0 mt-3 text-sm font-bold">{title}</p><p className="mx-auto mb-0 mt-1 max-w-md text-sm leading-5 text-muted">{description}</p></div>; }
+function RowsSkeleton({ count = 2 }: { count?: number }) { return <div className="animate-pulse divide-y divide-line/60" aria-label="Carregando conteúdo">{Array.from({ length: count }, (_, index) => <div key={index} className="flex h-[4.75rem] items-center gap-3 px-4 md:px-5"><span className="h-12 w-12 rounded-xl bg-selection/40" /><span className="flex-1"><span className="block h-3.5 w-1/3 rounded bg-selection" /><span className="mt-2 block h-3 w-1/2 rounded bg-selection" /></span></div>)}<span className="sr-only" role="status">Carregando...</span></div>; }
+function HomeSkeleton() { return <div className="h-[38rem] animate-pulse rounded-2xl border border-line bg-surface" />; }
+function MutationNotice({ error, className }: { error?: Error | null; className?: string }) { return error ? <AdminNotice className={className}>Não foi possível concluir a alteração. Seus dados foram mantidos. Tente novamente.</AdminNotice> : null; }
 function bannerRequest(item: PublicHomeBanner, order: number): UpsertBannerRequest { return { tipo: item.tipo, titulo: item.titulo, mensagem: item.mensagem, link: item.link, bgImg: item.bgImg, bgColor: item.bgColor, order }; }
+function getBannerUrlError(value?: string | null) { if (!value?.trim()) return undefined; try { return ["http:", "https:"].includes(new URL(value.trim()).protocol) ? undefined : "Use um endereço que comece com https:// ou http://."; } catch { return "Use um endereço completo, começando com https:// ou http://."; } }
 function linkRequest(item: PublicLink, order: number): UpsertLinkRequest { return { title: item.title, url: item.url, iconKey: item.iconKey, colorKey: item.colorKey, color: item.color, variant: item.variant, order, isActive: item.isActive }; }
 function isValidDestination(value: string) { const normalized = normalizeLinkUrl(value); if (!normalized) return false; try { return ["http:", "https:", "mailto:", "tel:"].includes(new URL(normalized).protocol); } catch { return false; } }
-function formatBannerType(type?: string | null) { const value = type?.trim() || "destaque"; return value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1).toLocaleLowerCase("pt-BR"); }
+function moveInArray<T>(list: T[], from: number, to: number): T[] { const next = [...list]; const [moved] = next.splice(from, 1); next.splice(to, 0, moved); return next; }

@@ -1,37 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight } from "lucide-react";
+import { ArrowDown, CalendarDays, ChevronRight } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getTenantBanners } from "../../shared/api/banners";
-import { getTenantChurches } from "../../shared/api/churches";
 import { getTenantEvents } from "../../shared/api/events";
 import { getTodayLiturgy } from "../../shared/api/liturgy";
-import { getTenant } from "../../shared/api/tenants";
+import { usePublicTenant } from "../../shared/hooks/usePublicTenant";
+import { usePublicChurches } from "../../shared/hooks/usePublicChurches";
+import { toDateKey } from "../../shared/lib/date";
+import { resolveParishCover } from "../../shared/lib/parishCover";
+import { EventListSkeleton } from "../events/EventListSkeleton";
+import { SectionHeading } from "../../shared/components/SectionHeading";
 import { getBrazilianWhatsappHref } from "../../shared/lib/phone";
 import { ErrorState, LoadingState } from "../../shared/components/PageState";
-import { SectionHeading } from "../../shared/components/SectionHeading";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { getEventsForDate } from "../calendar/calendar.utils";
-import { HomeBannerCarousel } from "./HomeBannerCarousel";
+import { HomeHighlights } from "./HomeHighlights";
 import { HomeHeader } from "./HomeHeader";
 import { TodayEventsList } from "./TodayEventsList";
 
 export function PublicHomePage() {
   const { tenantSlug = "" } = useParams();
   const today = new Date();
-  const todayKey = toDateString(today);
+  const todayKey = toDateKey(today);
   const rangeEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
-  const rangeEndKey = toDateString(rangeEnd);
-  const tenantQuery = useQuery({
-    queryKey: ["tenant", tenantSlug],
-    queryFn: () => getTenant(tenantSlug),
-    enabled: Boolean(tenantSlug),
-  });
+  const rangeEndKey = toDateKey(rangeEnd);
+  const tenantQuery = usePublicTenant(tenantSlug);
   const bannersQuery = useQuery({
     queryKey: ["banners", tenantSlug],
     queryFn: () => getTenantBanners(tenantSlug),
     enabled: Boolean(tenantSlug),
   });
-  const churchesQuery = useQuery({ queryKey: ["churches", tenantSlug], queryFn: () => getTenantChurches(tenantSlug), enabled: Boolean(tenantSlug), retry: false });
+  const churchesQuery = usePublicChurches(tenantSlug, { retry: false });
   const eventsQuery = useQuery({
     queryKey: ["events", tenantSlug, todayKey, rangeEndKey],
     queryFn: () => getTenantEvents(tenantSlug, todayKey, rangeEndKey),
@@ -47,7 +46,7 @@ export function PublicHomePage() {
 
   if (tenantQuery.isError || !tenantQuery.data) {
     return (
-      <main className="grid min-h-dvh max-w-none place-items-center bg-white p-6 text-center text-slate-900">
+      <main className="grid min-h-dvh max-w-none place-items-center bg-white p-6 text-center text-ink">
         <ErrorState title="Paróquia não encontrada" description="Confira o endereço acessado ou tente novamente." />
       </main>
     );
@@ -64,11 +63,10 @@ export function PublicHomePage() {
   );
   const todayEvents = getEventsForDate(sortedEvents, today);
   const nextEvent = sortedEvents.find((event) => new Date(event.start) > today && !todayEvents.includes(event));
-  const fallbackImageUrl = churchesQuery.data?.find((church) => church.tipo === "matriz" && church.urlImg?.trim())?.urlImg
-    ?? churchesQuery.data?.find((church) => church.urlImg?.trim())?.urlImg;
+  const fallbackImageUrl = resolveParishCover({ churches: churchesQuery.data });
 
   return (
-    <main className="min-h-dvh max-w-none bg-white p-0 text-slate-900">
+    <main className="min-h-dvh max-w-none bg-canvas p-0 text-ink">
       <HomeHeader
         tenantName={tenant.name}
         cidade={cityLabel}
@@ -81,42 +79,25 @@ export function PublicHomePage() {
         confessionSchedule={tenant.confessionSchedule}
       />
 
-      <section className="relative z-[2] mx-auto -mt-7 max-w-6xl px-0 sm:px-4 md:-mt-12">
-        <div className="rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-5 shadow-[0_-18px_50px_rgb(15_23_42/0.13)] sm:rounded-[2rem] sm:px-6 md:p-8">
-          <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.45fr)_minmax(19rem,0.75fr)] lg:gap-10">
-            <div className="order-1 grid gap-4 lg:order-1">
-              <SectionHeading
-                title="Destaques"
-                meta="da comunidade"
-                className="hidden lg:flex"
+      <section className="mx-auto max-w-6xl px-5 sm:px-6">
+        <div className="pb-12 pt-5 sm:pt-8">
+          <div className="grid min-w-0 gap-4 sm:gap-8">
+            <div className="grid min-w-0 gap-3">
+              <HomeHighlights
+                banners={bannersQuery.data ?? []}
+                reading={liturgyQuery.data}
+                readingStatus={liturgyQuery.isLoading ? "loading" : liturgyQuery.isError ? "error" : "ready"}
+                includeLiturgy
+                action={todayEvents.length > 0 ? <a href="#today-agenda-title" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold text-primary hover:bg-selection focus-visible:outline-2 focus-visible:outline-focus"><CalendarDays size={15} aria-hidden="true" />{todayEvents.length} {todayEvents.length === 1 ? "evento hoje" : "eventos hoje"}<ArrowDown size={14} aria-hidden="true" /></a> : undefined}
               />
-              {bannersQuery.isLoading || liturgyQuery.isLoading ? (
-                <div className="min-h-40 animate-pulse rounded-[1.35rem] bg-slate-100" aria-label="Carregando destaques" />
-              ) : (
-                <HomeBannerCarousel
-                  banners={bannersQuery.data ?? []}
-                  evangelho={liturgyQuery.data ?? null}
-                />
-              )}
+              {bannersQuery.isLoading ? <p role="status" className="m-0 text-sm text-muted">Carregando avisos da comunidade...</p> : null}
+              {bannersQuery.isError ? <div><p className="m-0 text-base text-muted">Não foi possível carregar os avisos da comunidade.</p><button type="button" onClick={() => void bannersQuery.refetch()} className="mt-1 min-h-11 rounded-lg text-sm font-semibold text-primary">Tentar novamente</button></div> : null}
             </div>
-
-            <section className="order-1 grid gap-2 lg:order-2" aria-labelledby="today-agenda-title">
-              <header className="flex items-start justify-between gap-4 px-1 pt-1">
-                <div className="min-w-0">
-                  <p className="m-0 text-[0.68rem] font-extrabold uppercase tracking-[0.15em] text-amber-700">
-                    Hoje · {formatDateLong(today)}
-                  </p>
-                  <h2
-                    id="today-agenda-title"
-                    className="mb-0 mt-1 text-[1.4rem] font-bold leading-tight text-slate-950"
-                  >
-                    Agenda de hoje
-                  </h2>
-                </div>
-
+            <section className="grid min-w-0 gap-3 sm:gap-4" aria-labelledby="today-agenda-title">
+              <SectionHeading id="today-agenda-title" title="Agenda de hoje" description={<span className="font-medium leading-5">{formatDateLong(today)}</span>} className="scroll-mt-5 flex-wrap items-center gap-x-2 gap-y-1 pt-1 [&_h2]:scroll-mt-5" action={
                 <Link
                   to={agendaHref}
-                  className="group inline-flex min-h-11 flex-none items-center gap-0.5 rounded-xl px-2 text-xs font-bold text-slate-600 transition-colors duration-200 hover:bg-slate-50 hover:text-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/35"
+                  className="group inline-flex min-h-11 flex-none items-center gap-1 rounded-lg border border-line bg-surface px-3 text-[13px] font-semibold text-primary transition-colors duration-200 hover:border-control-border hover:bg-selection active:bg-selection focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none sm:text-sm"
                 >
                   Ver agenda
                   <ChevronRight
@@ -125,14 +106,14 @@ export function PublicHomePage() {
                     size={15}
                   />
                 </Link>
-              </header>
+              } />
 
               {eventsQuery.isLoading ? (
-                <TodayEventsSkeleton />
+                <EventListSkeleton count={2} label="Carregando agenda..." />
               ) : eventsQuery.isError ? (
                 <ErrorState title="Não foi possível carregar a agenda" description="Tente novamente em instantes." />
               ) : (
-                <TodayEventsList events={todayEvents} nextEvent={nextEvent} agendaHref={agendaHref} />
+                <div className="overflow-hidden rounded-2xl border border-line bg-surface"><TodayEventsList events={todayEvents} nextEvent={nextEvent} agendaHref={agendaHref} /></div>
               )}
             </section>
           </div>
@@ -142,41 +123,12 @@ export function PublicHomePage() {
   );
 }
 
-function TodayEventsSkeleton() {
-  return (
-    <div
-      className="relative overflow-hidden rounded-[1.2rem] border border-slate-200/80 bg-white px-4 shadow-[0_4px_18px_rgb(15_23_42/0.035)]"
-      aria-label="Carregando agenda"
-    >
-      <span aria-hidden="true" className="absolute bottom-[3.05rem] left-[1.125rem] top-[1.69rem] w-px bg-slate-200" />
-      {[0, 1].map((item) => (
-        <div
-          key={item}
-          aria-hidden="true"
-          className="relative grid min-h-[4.75rem] animate-pulse grid-cols-[2.25rem_3.25rem_minmax(0,1fr)_1rem] items-stretch gap-x-2 py-3.5 pr-2"
-        >
-          <span className="relative z-[1] flex items-start justify-center pt-1.5">
-            <span className="h-3.5 w-3.5 rounded-full border-[3px] border-slate-200 bg-white" />
-          </span>
-          <span className="mt-1 h-4 w-10 rounded bg-slate-100" />
-          <span className="self-center">
-            <span className="block h-4 w-3/5 rounded bg-slate-100" />
-            <span className="mt-2 block h-3 w-2/5 rounded bg-slate-100" />
-          </span>
-          <span />
-        </div>
-      ))}
-      <span className="sr-only" role="status">Carregando agenda...</span>
-    </div>
-  );
-}
-
 function HomeSkeleton({ title }: { title: string }) {
   return (
-    <main className="min-h-dvh max-w-none bg-white p-0 text-slate-900">
-      <div className="min-h-[274px] animate-pulse bg-slate-800 md:min-h-[360px]" />
-      <section className="relative z-[2] mx-auto -mt-7 max-w-6xl sm:px-4 md:-mt-12">
-        <div className="min-h-[28rem] rounded-t-[2rem] bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-7 shadow-[0_-18px_50px_rgb(15_23_42/0.13)] sm:rounded-[2rem] md:pb-7">
+    <main className="min-h-dvh max-w-none bg-canvas p-0 text-ink">
+      <div className="mx-auto h-32 max-w-6xl animate-pulse bg-selection motion-reduce:animate-none sm:mt-6 sm:h-60 sm:rounded-2xl lg:h-72" />
+      <section className="mx-auto max-w-6xl px-5 sm:px-6">
+        <div className="min-h-[28rem] bg-surface pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-7">
           <LoadingState title={title} />
         </div>
       </section>
@@ -184,11 +136,6 @@ function HomeSkeleton({ title }: { title: string }) {
   );
 }
 
-function toDateString(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 function formatDateLong(date: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(date).replace(".", "");
+  return new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(date).replace(".", "");
 }

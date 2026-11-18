@@ -5,5 +5,8 @@ import { eventHandlers } from "./events";
 import { liturgyHandlers } from "./liturgy";
 import { linkHandlers } from "./links";
 import { tenantHandlers } from "./tenants";
+import { onboardingHandlers } from "./onboarding";
 
-export const handlers = [...authHandlers, ...tenantHandlers, ...bannerHandlers, ...eventHandlers, ...liturgyHandlers, ...churchHandlers, ...linkHandlers];
+export const dataHandlers = [ ...tenantHandlers, ...bannerHandlers, ...eventHandlers, ...liturgyHandlers, ...churchHandlers, ...linkHandlers];
+
+export const handlers = [...onboardingHandlers, ...authHandlers, ...dataHandlers];

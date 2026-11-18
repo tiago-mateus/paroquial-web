@@ -22,6 +22,11 @@ describe("PublicHomePage", () => {
     expect(await screen.findAllByText("Santa Missa")).not.toHaveLength(0);
     expect(screen.getByRole("navigation", { name: "Navegação principal da paróquia" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Secretaria/i })).toHaveAttribute("href", "https://wa.me/5511999999999");
+    expect(screen.queryByRole("link", { name: "Ver canais oficiais" })).not.toBeInTheDocument();
+    const highlights = screen.getByRole("region", { name: "Destaques" });
+    const agenda = screen.getByRole("region", { name: "Agenda de hoje" });
+    expect(highlights.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: /eventos? hoje/ })).toHaveAttribute("href", "#today-agenda-title");
   });
 
   it("abre os horários de confissão a partir do hero", async () => {

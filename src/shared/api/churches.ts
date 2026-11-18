@@ -30,8 +30,8 @@ export function deleteChurch(tenantSlug: string, churchId: string) {
   return apiFetch<void>(`/api/v1/admin/tenants/${tenantSlug}/churches/${churchId}`, { method: "DELETE" });
 }
 
-export function hasValidChurchCoordinates(church: PublicChurch) {
-  return Number.isFinite(church.latitude) && Number.isFinite(church.longitude) && church.latitude !== 0 && church.longitude !== 0;
+export function hasValidChurchCoordinates(church: Pick<PublicChurch, "latitude" | "longitude">) {
+  return Number.isFinite(church.latitude) && Number.isFinite(church.longitude) && Math.abs(church.latitude) <= 90 && Math.abs(church.longitude) <= 180 && !(church.latitude === 0 && church.longitude === 0);
 }
 
 export function getChurchDirectionsHref(church: PublicChurch) {

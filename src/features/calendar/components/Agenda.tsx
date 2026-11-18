@@ -32,8 +32,9 @@ type AgendaProps = {
   className?: string;
   hideToolbar?: boolean;
   integratedWeekLabels?: boolean;
-  selectionTone?: 'slate' | 'amber';
+  selectionTone?: 'slate' | 'amber' | 'blue';
   plain?: boolean;
+  mondayFirstWeek?: boolean;
 };
 
 export function Agenda({
@@ -50,6 +51,7 @@ export function Agenda({
   integratedWeekLabels = false,
   selectionTone = 'slate',
   plain = false,
+  mondayFirstWeek = false,
 }: AgendaProps) {
   const navigateDate = onNavigateDate ?? onSelectDate;
   const eventCounts = useMemo(
@@ -104,8 +106,7 @@ export function Agenda({
     onSelectDate(date);
   }
 
-  // Semana: domingo-sábado (getWeekDays parte do domingo); Mês: segunda-domingo (pt-BR)
-  const weekDays = getWeekDays(selectedDate);
+  const weekDays = getWeekDays(selectedDate, mondayFirstWeek);
   const monthGrid = useMemo(
     () => getMonthGrid(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)),
     [selectedDate],
@@ -153,15 +154,15 @@ export function Agenda({
     <div
       ref={agendaRef}
       className={classNames(
-        'w-full min-w-0 max-w-full overflow-hidden bg-white',
-        plain ? '' : 'md:rounded-2xl md:border md:border-slate-200/80 md:p-4',
+        'w-full min-w-0 max-w-full overflow-hidden',
+        plain ? 'bg-transparent' : 'rounded-2xl bg-surface p-3 md:p-4',
         className,
       )}
     >
       {/* Toolbar */}
       <div
         className={classNames(
-          'items-center justify-between border-b border-slate-100 px-1.5 py-1 md:mb-3 md:px-0 md:pb-3 md:pt-0',
+          'items-center justify-between border-b border-line px-1.5 py-1 md:mb-3 md:px-0 md:pb-3 md:pt-0',
           hideToolbar ? 'hidden' : 'flex',
         )}
       >
@@ -169,14 +170,14 @@ export function Agenda({
           type="button"
           onClick={() => changePeriod(-1)}
           aria-label={view === 'week' ? 'Semana anterior' : 'Mês anterior'}
-          className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+          className="grid h-11 w-11 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
         >
           <ChevronLeft size={17} />
         </button>
 
         <div className="flex min-w-0 items-center gap-2">
           <strong
-            className="text-sm font-bold tracking-[-0.01em] text-slate-800"
+            className="text-sm font-bold tracking-[-0.01em] text-ink"
             aria-live="polite"
           >
             {formatMonth(selectedDate)}
@@ -185,7 +186,7 @@ export function Agenda({
             <button
               type="button"
               onClick={onToday}
-              className="inline-flex min-h-11 items-center rounded-lg bg-amber-50 px-2 py-1 text-[0.65rem] font-bold text-amber-800 transition hover:bg-amber-100"
+              className={selectionTone === 'blue' ? 'inline-flex min-h-11 items-center rounded-lg bg-selection px-2 py-1 text-sm font-semibold text-primary hover:bg-selection' : 'inline-flex min-h-11 items-center rounded-lg bg-accent px-2 py-1 text-[13px] font-bold text-accent-ink transition hover:bg-accent'}
             >
               Hoje
             </button>
@@ -196,7 +197,7 @@ export function Agenda({
           type="button"
           onClick={() => changePeriod(1)}
           aria-label={view === 'week' ? 'Próxima semana' : 'Próximo mês'}
-          className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+          className="grid h-11 w-11 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
         >
           <ChevronRight size={17} />
         </button>
@@ -205,16 +206,16 @@ export function Agenda({
       {/* Header de dias da semana */}
       <div
         className={classNames(
-          'grid grid-cols-7 gap-1',
+          'grid grid-cols-7 gap-0',
           integratedWeekLabels && view === 'week' ? 'hidden' : '',
           hideToolbar && view === 'month' ? 'px-3 pt-1' : '',
         )}
         aria-hidden="true"
       >
-        {(view === 'month' ? monthWeekdayLabels : weekWeekdayLabels).map((label) => (
+        {(view === 'month' || mondayFirstWeek ? monthWeekdayLabels : weekWeekdayLabels).map((label) => (
           <span
             key={label}
-            className="py-1.5 text-center text-[0.68rem] font-bold uppercase tracking-[0.04em] text-slate-500 md:py-2 md:text-[0.72rem]"
+            className="py-1.5 text-center text-[13px] font-bold uppercase tracking-[0.04em] text-muted md:py-2 md:text-[13px]"
           >
             {label}
           </span>
@@ -255,8 +256,14 @@ export function Agenda({
       >
         <div
           className={classNames(
-            view === 'month' ? 'grid gap-1 bg-white' : 'grid grid-cols-7 gap-1 bg-white',
-            integratedWeekLabels && view === 'week' ? 'gap-1 px-4 py-3' : '',
+            view === 'month'
+              ? 'grid gap-0 bg-transparent'
+              : integratedWeekLabels && selectionTone === 'blue'
+                ? 'grid grid-cols-7 bg-transparent'
+                : 'grid grid-cols-7 gap-0 bg-transparent',
+            integratedWeekLabels && view === 'week'
+              ? selectionTone === 'blue' ? 'gap-0.5 px-0.5 py-3' : 'gap-1 px-4 py-3'
+              : '',
             hideToolbar && view === 'month' ? 'px-3 pb-3' : '',
           )}
           role={view === 'month' ? 'grid' : 'listbox'}
@@ -265,7 +272,7 @@ export function Agenda({
         >
           {view === 'month'
             ? Array.from({ length: Math.ceil(cells.length / 7) }, (_, rowIndex) => (
-                <div key={rowIndex} role="row" className="grid grid-cols-7 gap-1">
+                <div key={rowIndex} role="row" className="grid grid-cols-7 gap-0">
                   {cells.slice(rowIndex * 7, rowIndex * 7 + 7).map(renderCell)}
                 </div>
               ))
@@ -278,7 +285,7 @@ export function Agenda({
           type="button"
           onClick={() => onViewChange(view === 'month' ? 'week' : 'month')}
           aria-expanded={view === 'month'}
-          className="flex h-10 w-full items-center justify-center gap-1.5 border-t border-slate-100 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500/35 motion-reduce:transition-none md:hidden"
+          className="flex min-h-11 w-full items-center justify-center gap-1.5 border-t border-line text-[13px] font-semibold text-muted transition hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus/35 motion-reduce:transition-none md:hidden"
         >
           {view === 'month' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           {view === 'month' ? 'Recolher' : 'Ver mês completo'}

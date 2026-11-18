@@ -1,113 +1,89 @@
-import { divIcon, latLngBounds } from "leaflet";
+import { latLngBounds } from "leaflet";
 import { useEffect, useMemo, useRef } from "react";
-import { CircleMarker, LayersControl, MapContainer, Marker, TileLayer, useMap, ZoomControl } from "react-leaflet";
+import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { PublicChurch } from "../../shared/api/churches";
 import { hasValidChurchCoordinates } from "../../shared/api/churches";
+import { ChurchMapMarkers } from "./ChurchMapMarkers";
+import { ChurchLightMapLayer } from "./ChurchLightMapLayer";
+import type { ChurchMapStyle } from "./ChurchMapStylePicker";
 
 const DEFAULT_CENTER: [number, number] = [-23.55052, -46.633308];
 
-export default function ChurchesMapInner({ churches, selectedId, onSelect, userLocation }: { churches: PublicChurch[]; selectedId?: string; onSelect: (church: PublicChurch) => void; userLocation?: { latitude: number; longitude: number } }) {
+export default function ChurchesMapInner({ churches, mapStyle = "light", selectedId, focusSelection = false, carouselHeight = 212, onSelect, onSelectGroup, userLocation, panelExpanded = false, overviewKey = 0 }: { churches: PublicChurch[]; mapStyle?: ChurchMapStyle; selectedId?: string; focusSelection?: boolean; carouselHeight?: number; onSelect: (church: PublicChurch) => void; onSelectGroup: (churches: PublicChurch[]) => void; userLocation?: { latitude: number; longitude: number }; panelExpanded?: boolean; overviewKey?: number }) {
   const validChurches = useMemo(() => churches.filter(hasValidChurchCoordinates), [churches]);
   const initialCenter: [number, number] = validChurches.length
     ? [validChurches[0].latitude, validChurches[0].longitude]
     : DEFAULT_CENTER;
 
+  if (!validChurches.length) return <div className="absolute inset-0 grid place-content-center bg-canvas px-5 text-center text-base leading-6 text-muted">As coordenadas das igrejas ainda não foram informadas.</div>;
+
   return (
     <div className="churches-map absolute inset-0 z-0 isolate" aria-label="Mapa de igrejas">
-      <MapContainer center={initialCenter} zoom={11} zoomControl={false} scrollWheelZoom className="h-full w-full">
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Mapa claro">
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Ruas">
-            <TileLayer
+      <MapContainer center={initialCenter} zoom={11} minZoom={2} maxZoom={19} zoomControl={false} scrollWheelZoom={false} zoomAnimation={!window.matchMedia("(prefers-reduced-motion: reduce)").matches} fadeAnimation={!window.matchMedia("(prefers-reduced-motion: reduce)").matches} className="h-full w-full">
+        {mapStyle === "light" ? <ChurchLightMapLayer /> : mapStyle === "streets" ? <TileLayer
+              key="streets"
+              maxZoom={19}
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Satélite">
-            <TileLayer
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            /> : <TileLayer
+              key="satellite"
+              maxZoom={19}
               attribution="Tiles &copy; Esri"
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
-        <ZoomControl position="topright" />
-        {userLocation ? <CircleMarker center={[userLocation.latitude, userLocation.longitude]} radius={8} pathOptions={{ color: "#ffffff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }} /> : null}
+            />}
+        {userLocation ? <CircleMarker center={[userLocation.latitude, userLocation.longitude]} radius={8} pathOptions={{ color: "#ffffff", weight: 3, fillColor: "var(--color-primary)", fillOpacity: 1 }} /> : null}
 
-        {validChurches.map((church) => {
-          const selected = church.id === selectedId;
-          return (
-            <Marker
-              key={church.id}
-              position={[church.latitude, church.longitude]}
-              icon={createChurchIcon(church, selected)}
-              zIndexOffset={selected ? 1000 : church.tipo === "matriz" ? 500 : 0}
-              title={church.nome}
-              alt={church.nome}
-              eventHandlers={{ click: () => onSelect(church) }}
-            />
-          );
-        })}
+        <ChurchMapMarkers churches={validChurches} selectedId={selectedId} onSelect={onSelect} onSelectGroup={onSelectGroup} />
 
-        <MapViewport churches={validChurches} selectedId={selectedId} userLocation={userLocation} />
+        <MapViewport churches={validChurches} selectedId={selectedId} focusSelection={focusSelection} carouselHeight={carouselHeight} userLocation={userLocation} panelExpanded={panelExpanded} overviewKey={overviewKey} />
       </MapContainer>
     </div>
   );
 }
 
-function MapViewport({ churches, selectedId, userLocation }: { churches: PublicChurch[]; selectedId?: string; userLocation?: { latitude: number; longitude: number } }) {
+function MapViewport({ churches, selectedId, focusSelection, carouselHeight, userLocation, panelExpanded, overviewKey }: { churches: PublicChurch[]; selectedId?: string; focusSelection: boolean; carouselHeight: number; userLocation?: { latitude: number; longitude: number }; panelExpanded?: boolean; overviewKey?: number }) {
   const map = useMap();
   const initializedRef = useRef(false);
-  const previousSelectedRef = useRef<string | undefined>(undefined);
-  const initialSelectedIdRef = useRef(selectedId);
   const coordinatesKey = churches.map((church) => `${church.id}:${church.latitude}:${church.longitude}`).join("|");
 
   useEffect(() => {
     map.invalidateSize();
     if (!churches.length) return;
 
-    const desktop = window.matchMedia("(min-width: 768px)").matches;
-    if (churches.length === 1) {
-      map.setView([churches[0].latitude, churches[0].longitude], 10, { animate: false });
-    } else {
-      const bounds = latLngBounds(churches.map((church) => [church.latitude, church.longitude]));
-      map.fitBounds(bounds, {
+    const overview = () => {
+      map.stop();
+      map.fitBounds(latLngBounds(churches.map((church) => [church.latitude, church.longitude])), {
         maxZoom: 14,
-        paddingTopLeft: [48, 72],
-        paddingBottomRight: desktop ? [380, 48] : [48, 240],
+        paddingTopLeft: [48, 76],
+        paddingBottomRight: [76, carouselHeight + 44],
         animate: false,
       });
-    }
+    };
+    if (!initializedRef.current || !focusSelection) overview();
+    const onResize = () => { if (!focusSelection) overview(); };
+    map.on("resize", onResize);
     initializedRef.current = true;
-    previousSelectedRef.current = initialSelectedIdRef.current;
-  }, [coordinatesKey, churches, map]);
+    return () => { map.off("resize", onResize); };
+  }, [coordinatesKey, churches, map, overviewKey, carouselHeight, focusSelection]);
 
   useEffect(() => {
-    if (!initializedRef.current || !selectedId || selectedId === previousSelectedRef.current) return;
+    map.stop();
+    if (!initializedRef.current || !selectedId || !focusSelection) return;
     const selected = churches.find((church) => church.id === selectedId);
-    previousSelectedRef.current = selectedId;
-    if (selected) map.flyTo([selected.latitude, selected.longitude], 15, { duration: 0.7 });
-  }, [churches, map, selectedId]);
+    if (!selected) return;
+    const zoom = Math.max(14, map.getZoom());
+    const inset = panelExpanded ? map.getSize().y * 0.65 : carouselHeight + 28;
+    const point = map.project([selected.latitude, selected.longitude], zoom);
+    point.y += Math.max(0, inset / 2 - 30);
+    map.flyTo(map.unproject(point, zoom), zoom, { duration: 0.85, animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+    // MapContainer stops animations when removing the map. Its cleanup runs
+    // before this child's cleanup, so calling stop there accesses removed panes.
+  }, [churches, map, selectedId, focusSelection, panelExpanded, carouselHeight]);
 
   useEffect(() => {
-    if (userLocation) map.flyTo([userLocation.latitude, userLocation.longitude], 13, { duration: 0.7 });
+    if (userLocation) { map.stop(); map.flyTo([userLocation.latitude, userLocation.longitude], 13, { duration: 0.85, animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches }); }
   }, [map, userLocation]);
 
   return null;
-}
-
-function createChurchIcon(church: PublicChurch, selected: boolean) {
-  const size = selected ? 42 : church.tipo === "matriz" ? 36 : 32;
-  const tone = selected ? "selected" : church.tipo === "matriz" ? "matrix" : "chapel";
-  return divIcon({
-    className: "church-map-div-icon",
-    html: `<span class="church-map-marker church-map-marker--${tone}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M10 4h4"/><path d="M5 22V10l7-4 7 4v12"/><path d="M2 22h20"/><path d="M9 22v-6h6v6"/><path d="M8 12h2"/><path d="M14 12h2"/></svg></span>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
 }

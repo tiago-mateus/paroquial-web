@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 import { publicLinks } from "../data/links";
-import { baseUrl, tenantNotFound } from "../utils";
+import { baseUrl, createMockId, tenantNotFound } from "../utils";
 import { tenantExists } from "../data";
 import type { UpsertLinkRequest } from "../../shared/api/links";
 
@@ -33,7 +33,7 @@ export const linkHandlers = [
     await delay(250);
     const tenantSlug = String(params.tenantSlug);
     const input = await request.json() as UpsertLinkRequest;
-    const link = { ...input, id: crypto.randomUUID(), tenantSlug };
+    const link = { ...input, id: createMockId(), tenantSlug };
     publicLinks.push(link);
     return HttpResponse.json(publicLink(link), { status: 201 });
   }),

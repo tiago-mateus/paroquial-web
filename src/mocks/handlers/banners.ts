@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 import { banners, tenantExists } from "../data";
-import { baseUrl, tenantNotFound } from "../utils";
+import { baseUrl, createMockId, tenantNotFound } from "../utils";
 import type { UpsertBannerRequest } from "../../shared/api/banners";
 
 function publicBanner(banner: (typeof banners)[number]) {
@@ -28,7 +28,7 @@ export const bannerHandlers = [
     await delay(250);
     const tenantSlug = String(params.tenantSlug);
     const input = await request.json() as UpsertBannerRequest;
-    const banner = { ...input, id: crypto.randomUUID(), tenantSlug };
+    const banner = { ...input, id: createMockId(), tenantSlug };
     banners.push(banner);
     return HttpResponse.json(publicBanner(banner), { status: 201 });
   }),

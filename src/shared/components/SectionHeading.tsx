@@ -1,25 +1,20 @@
 import type { ReactNode } from "react";
+import { classNames } from "../lib/classNames";
 
 type SectionHeadingProps = {
+  id?: string;
   title: ReactNode;
-  meta?: ReactNode;
+  description?: ReactNode;
   action?: ReactNode;
   className?: string;
 };
 
-export function SectionHeading({ title, meta, action, className }: SectionHeadingProps) {
-  return (
-    <div className={`flex items-center justify-between gap-3 pt-1 ${className ?? ""}`}>
-      <span className="text-base font-extrabold text-gray-900">
-        {title}
-        {meta ? (
-          <>
-            <em className="mx-1 font-normal not-italic text-slate-300">|</em>
-            <small className="text-base font-medium text-slate-500">{meta}</small>
-          </>
-        ) : null}
-      </span>
-      {action ? <div className="flex-none [&_a]:rounded-full [&_a]:bg-slate-100 [&_a]:px-3 [&_a]:py-1.5 [&_a]:text-[0.72rem] [&_a]:font-extrabold [&_a]:text-slate-700">{action}</div> : null}
+export function SectionHeading({ id, title, description, action, className }: SectionHeadingProps) {
+  return <header className={classNames("flex justify-between gap-3", className)}>
+    <div className="min-w-0">
+      <h2 id={id} className="m-0 font-display text-[26px] font-medium leading-tight tracking-tight text-ink sm:text-[30px]">{title}</h2>
+      {description ? <p className="mb-0 mt-2 text-sm text-muted">{description}</p> : null}
     </div>
-  );
+    {action ? <div className="shrink-0">{action}</div> : null}
+  </header>;
 }

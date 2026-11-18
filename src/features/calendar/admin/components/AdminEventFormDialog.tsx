@@ -1,9 +1,13 @@
-import { CalendarClock, Check, ChevronDown, ChevronRight, Clock3, Info, MapPin, Repeat2, Trash2, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, ChevronDown, ChevronRight, Clock3, Info, LoaderCircle, MapPin, Repeat2, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { PublicChurch } from "../../../../shared/api/churches";
 import type { CalendarEvent, CreateEventRequest, EventType, RepeatOption } from "../../../../shared/api/events";
 import { classNames } from "../../../../shared/lib/classNames";
+import { fieldClassName, fieldErrorClassName, labelClassName } from "../../../admin/AdminFormStyles";
+import { buttonClasses, fieldClasses } from "../../../../shared/styles/controls";
+import { AdminNotice } from "../../../admin/AdminNotice";
+import { DiscardChangesDialog, UnsavedChanges } from "../../../admin/UnsavedChanges";
 
 type Values = {
   title: string;
@@ -16,11 +20,17 @@ type Values = {
   type: EventType;
   repeat: RepeatOption;
   repeatUntil: string;
+  repeatWeekdays: number[];
 };
 
 export type EventEditor =
   | { kind: "create"; date: Date; source?: CalendarEvent }
   | { kind: "edit"; event: CalendarEvent };
+
+/** Erro devolvido pela API (ApiError) já normalizado para o formulário. */
+export type EventFormError = { message: string; fields?: Record<string, string[]> };
+
+export type ChurchesStatus = "loading" | "error" | "ready";
 
 const typeOptions: Array<[EventType, string]> = [
   ["missa", "Missa"],
@@ -32,11 +42,35 @@ const typeOptions: Array<[EventType, string]> = [
   ["outro", "Outro"],
 ];
 
+// Ordem de exibição começando na segunda, como o restante da agenda administrativa.
+const weekdayOptions: Array<{ value: number; short: string; long: string; plural: string }> = [
+  { value: 1, short: "Seg", long: "segunda-feira", plural: "segundas" },
+  { value: 2, short: "Ter", long: "terça-feira", plural: "terças" },
+  { value: 3, short: "Qua", long: "quarta-feira", plural: "quartas" },
+  { value: 4, short: "Qui", long: "quinta-feira", plural: "quintas" },
+  { value: 5, short: "Sex", long: "sexta-feira", plural: "sextas" },
+  { value: 6, short: "Sáb", long: "sábado", plural: "sábados" },
+  { value: 0, short: "Dom", long: "domingo", plural: "domingos" },
+];
+
+/** Campos da API mapeados para os campos do formulário. */
+const serverFieldMap: Record<string, keyof Values> = {
+  title: "title",
+  start: "startTime",
+  end: "endTime",
+  location: "location",
+  description: "description",
+  repeatUntil: "repeatUntil",
+};
+
 function dateValue(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 function timeValue(value?: string) {
   return value ? value.slice(11, 16) : "";
+}
+function weekdayOf(date: string) {
+  return new Date(`${date}T12:00:00`).getDay();
 }
 function defaults(editor: EventEditor, churches: PublicChurch[]): Values {
   const event = editor.kind === "edit" ? editor.event : editor.source;
@@ -44,77 +78,31 @@ function defaults(editor: EventEditor, churches: PublicChurch[]): Values {
   const registeredLocation = churches.find(
     (church) => normalize(church.nome) === normalize(location),
   )?.nome;
+  const date = editor.kind === "edit" ? editor.event.start.slice(0, 10) : dateValue(editor.date);
+  const repeat = editor.kind === "edit" ? editor.event.repeat : "none";
   return {
     title: event?.title ?? "",
     description: event?.description ?? "",
     location,
     locationChoice: registeredLocation ?? (location ? "__other" : ""),
-    date:
-      editor.kind === "edit" ? editor.event.start.slice(0, 10) : dateValue(editor.date),
+    date,
     startTime: timeValue(event?.start) || "18:00",
-    endTime: timeValue(event?.end) || "19:00",
+    endTime: event ? timeValue(event.end) : "19:00",
     type: event?.type ?? "missa",
-    repeat: editor.kind === "edit" ? editor.event.repeat : "none",
+    repeat,
     repeatUntil:
       editor.kind === "edit" ? (editor.event.repeatUntil?.slice(0, 10) ?? "") : "",
+    repeatWeekdays:
+      repeat === "weekly" && editor.kind === "edit" && editor.event.repeatWeekdays.length
+        ? [...editor.event.repeatWeekdays]
+        : [weekdayOf(date)],
   };
-}
-
-// --- Swipe-to-close hook ---
-function useSwipeToClose(
-  ref: React.RefObject<HTMLElement | null>,
-  onClose: () => void,
-  enabled: boolean,
-) {
-  useEffect(() => {
-    if (!enabled) return;
-    const el = ref.current;
-    if (!el) return;
-    let startY = 0;
-    let currentY = 0;
-    let dragging = false;
-
-    function onTouchStart(e: TouchEvent) {
-      // Only initiate swipe if the touch starts near the top (drag handle area)
-      const touch = e.touches[0];
-      const rect = el!.getBoundingClientRect();
-      if (touch.clientY - rect.top > 56) return; // only top 56px
-      startY = touch.clientY;
-      dragging = true;
-    }
-    function onTouchMove(e: TouchEvent) {
-      if (!dragging) return;
-      currentY = e.touches[0].clientY;
-      const delta = currentY - startY;
-      if (delta > 0) {
-        (el as HTMLElement).style.transform = `translateY(${delta}px)`;
-        (el as HTMLElement).style.transition = "none";
-      }
-    }
-    function onTouchEnd() {
-      if (!dragging) return;
-      dragging = false;
-      const delta = currentY - startY;
-      (el as HTMLElement).style.transform = "";
-      (el as HTMLElement).style.transition = "";
-      if (delta > 80) {
-        onClose();
-      }
-    }
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd);
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [ref, onClose, enabled]);
 }
 
 export function AdminEventFormDialog({
   editor,
   churches,
+  churchesStatus = "ready",
   pending,
   error,
   onClose,
@@ -123,36 +111,83 @@ export function AdminEventFormDialog({
 }: {
   editor: EventEditor | null;
   churches: PublicChurch[];
+  churchesStatus?: ChurchesStatus;
   pending: boolean;
-  error?: string;
+  error?: EventFormError;
   onClose: () => void;
   onSubmit: (input: CreateEventRequest) => Promise<void>;
   onDelete: () => void;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const requestCloseRef = useRef<() => void>(() => undefined);
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const lastEditorRef = useRef<EventEditor | null>(null);
+  const previousStartRef = useRef("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const {
     register,
     handleSubmit,
     reset,
     watch,
     control,
-    formState: { errors },
+    setValue,
+    setError,
+    setFocus,
+    getValues,
+    formState: { errors, isDirty, dirtyFields },
   } = useForm<Values>();
   const values = watch();
   const repeat = values.repeat;
   const locationChoice = values.locationChoice;
+  requestCloseRef.current = () => {
+    if (pendingRef.current) return;
+    if (isDirty) setDiscardOpen(true);
+    else onClose();
+  };
 
-  // Swipe-to-close on mobile (only when not pending)
-  useSwipeToClose(panelRef, onClose, Boolean(editor) && !pending);
-
+  // Reinicia o formulário somente ao abrir um novo editor. Quando a lista de igrejas
+  // chega depois, atualiza os valores padrão sem apagar o que já foi digitado.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) {
+      lastEditorRef.current = null;
+      return;
+    }
     const initial = defaults(editor, churches);
-    reset(initial);
-    setDetailsOpen(Boolean(initial.description));
+    if (lastEditorRef.current !== editor) {
+      lastEditorRef.current = editor;
+      reset(initial);
+      previousStartRef.current = initial.startTime;
+      setDetailsOpen(Boolean(initial.description));
+    } else {
+      reset(initial, { keepDirtyValues: true });
+    }
   }, [churches, editor, reset]);
+
+  // Ao mudar a data, um único dia da semana ainda não escolhido manualmente
+  // acompanha a nova data. Séries com vários dias são preservadas.
+  const dateDirty = Boolean(dirtyFields.date);
+  const weekdaysDirty = Array.isArray(dirtyFields.repeatWeekdays)
+    ? dirtyFields.repeatWeekdays.some(Boolean)
+    : Boolean(dirtyFields.repeatWeekdays);
+  useEffect(() => {
+    if (!editor || !values.date || !dateDirty || weekdaysDirty) return;
+    const current = getValues("repeatWeekdays") ?? [];
+    const next = weekdayOf(values.date);
+    if (current.length <= 1 && current[0] !== next) setValue("repeatWeekdays", [next]);
+  }, [dateDirty, editor, getValues, setValue, values.date, weekdaysDirty]);
+
+  // Erros de validação do servidor aparecem junto aos campos correspondentes.
+  useEffect(() => {
+    if (!error?.fields) return;
+    for (const [field, messages] of Object.entries(error.fields)) {
+      const target = serverFieldMap[field];
+      if (target && messages.length) setError(target, { type: "server", message: messages[0] });
+    }
+  }, [error, setError]);
 
   useEffect(() => {
     if (!editor) return;
@@ -160,8 +195,9 @@ export function AdminEventFormDialog({
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     // No mobile, focus the close control instead of opening the virtual keyboard.
-    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
     const timer = window.setTimeout(() => {
+      if (contentRef.current) contentRef.current.scrollTop = 0;
       if (isMobile) closeButtonRef.current?.focus();
       else panelRef.current?.querySelector<HTMLElement>("input")?.focus();
     }, 0);
@@ -170,8 +206,9 @@ export function AdminEventFormDialog({
         document.querySelectorAll<HTMLElement>('[aria-modal="true"]'),
       ).at(-1);
       if (topModal !== panelRef.current) return;
-      if (event.key === "Escape" && !pending) {
-        onClose();
+      if (event.key === "Escape" && !pendingRef.current) {
+        event.preventDefault();
+        requestCloseRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -198,7 +235,7 @@ export function AdminEventFormDialog({
       document.body.style.overflow = overflow;
       previous?.focus();
     };
-  }, [editor, onClose, pending]);
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -221,22 +258,46 @@ export function AdminEventFormDialog({
           ? formValues.repeatUntil
           : undefined,
       repeatWeekdays:
-        formValues.repeat === "weekly" ? [selectedDate.getDay()] : undefined,
+        formValues.repeat === "weekly" ? [...formValues.repeatWeekdays].sort() : undefined,
       repeatMonthDay:
         formValues.repeat === "monthly" ? selectedDate.getDate() : undefined,
     });
   });
 
-  const fieldClass =
-    "mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-950 outline-none transition focus:border-amber-400 focus:ring-3 focus:ring-amber-100";
-  const labelClass = "text-xs font-bold text-slate-700";
+  // Mantém a duração ao mover o início, quando o término continua no mesmo dia.
+  const startTimeField = register("startTime", {
+    required: "Informe o início.",
+    deps: ["endTime"],
+    onChange: () => {
+      const nextStart = getValues("startTime");
+      const previousStart = previousStartRef.current;
+      previousStartRef.current = nextStart;
+      const end = getValues("endTime");
+      const duration = minutesOf(end) - minutesOf(previousStart);
+      if (!end || !previousStart || !nextStart || duration <= 0) return;
+      const nextEnd = minutesOf(nextStart) + duration;
+      if (nextEnd < 24 * 60) setValue("endTime", timeOf(nextEnd), { shouldDirty: true, shouldValidate: true });
+    },
+  });
+
+  const fieldClass = fieldClassName;
+  const labelClass = labelClassName;
   const isDuplicate = editor.kind === "create" && Boolean(editor.source);
+  const isSeriesEdit = editor.kind === "edit" && editor.event.repeat !== "none";
+  const unchangedEdit = editor.kind === "edit" && !isDirty;
+  const durationLabel = formatDuration(values.startTime, values.endTime);
+  const recurrenceSummary = describeRecurrence(values);
+  const generalError = error
+    ? hasMappedFieldErrors(error)
+      ? "Revise os campos indicados e tente novamente."
+      : error.message || "Não foi possível salvar. Tente novamente."
+    : undefined;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-end bg-slate-950/35 backdrop-blur-[1px] sm:items-stretch"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 md:items-center md:p-5"
       onMouseDown={(event) =>
-        event.target === event.currentTarget && !pending && onClose()
+        event.target === event.currentTarget && requestCloseRef.current()
       }
     >
       <section
@@ -244,49 +305,52 @@ export function AdminEventFormDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="event-form-title"
-        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:h-full sm:max-h-none sm:max-w-[38rem] sm:rounded-none"
+        aria-busy={pending}
+        className="admin-theme flex h-dvh w-full flex-col overflow-hidden bg-white pt-[env(safe-area-inset-top)] shadow-2xl md:h-auto md:max-h-[94dvh] md:max-w-3xl md:rounded-2xl md:pt-0"
       >
-        {/* Drag handle — mobile only */}
-        <div
-          aria-hidden="true"
-          className="flex justify-center pb-1 pt-3 sm:hidden"
-        >
-          <span className="h-1 w-10 rounded-full bg-slate-200" />
-        </div>
-
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:py-4 sm:px-6">
+        <UnsavedChanges dirty={isDirty} />
+        <header className="flex items-center justify-between border-b border-line/60 bg-white px-4 py-3 md:px-6 md:py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-amber-100 text-amber-800">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-selection/50 text-primary">
               <CalendarClock size={19} />
             </span>
             <div className="min-w-0">
-              <p className="m-0 truncate text-[0.62rem] font-extrabold uppercase tracking-[0.14em] text-amber-700">
-                {formatDateLabel(values.date)}
-              </p>
-              <h2 id="event-form-title" className="m-0 text-lg font-bold">
+              <h2 id="event-form-title" className="m-0 font-display text-2xl font-medium leading-tight tracking-tight">
                 {editor.kind === "edit"
                   ? "Editar evento"
                   : isDuplicate
                     ? "Duplicar evento"
                     : "Novo evento"}
               </h2>
+              <p className="m-0 mt-1 text-sm text-muted">{formatDateLabel(values.date)}</p>
             </div>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             aria-label="Fechar formulário"
-            onClick={onClose}
+            onClick={() => requestCloseRef.current()}
             disabled={pending}
-            className="grid h-11 w-11 flex-none place-items-center rounded-full bg-slate-100 p-0 text-slate-600 hover:bg-slate-200"
+            className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-transparent p-0 text-muted hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <X size={18} />
           </button>
         </header>
 
-        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="grid flex-1 scroll-pb-24 content-start overflow-y-auto bg-white pb-4">
-            {/* Título */}
+        <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
+          <div ref={contentRef} className="flex-1 scroll-pb-24 overflow-y-auto bg-white pb-4">
+            <fieldset disabled={pending} className="m-0 grid min-w-0 content-start border-0 p-0">
+            {isSeriesEdit ? (
+              <div className="mx-4 mt-4 flex gap-3 rounded-xl border border-line bg-accent px-4 py-3 text-sm text-accent-ink sm:mx-6">
+                <AlertTriangle size={17} aria-hidden="true" className="mt-0.5 flex-none text-accent-ink" />
+                <p className="m-0">
+                  <strong className="font-bold">Este evento se repete.</strong>{" "}
+                  Salvar altera toda a série, que passa a começar em{" "}
+                  {formatShortDate(values.date)}. Ocorrências anteriores a essa data deixam de aparecer na agenda.
+                </p>
+              </div>
+            ) : null}
+
             <FormSection title="Informações principais" icon={<Info size={15} />}>
               <label className={labelClass}>
                 Título
@@ -296,40 +360,23 @@ export function AdminEventFormDialog({
                     validate: (value) =>
                       value.trim().length >= 3 || "Use pelo menos 3 caracteres.",
                   })}
+                  aria-invalid={Boolean(errors.title)}
+                  aria-describedby={errors.title ? "event-title-error" : undefined}
                   className={`${fieldClass} text-base font-semibold`}
                   placeholder="Ex.: Santa Missa"
+                  autoComplete="off"
                 />
-                {errors.title ? <FieldError>{errors.title.message}</FieldError> : null}
+                {errors.title ? <FieldError id="event-title-error">{errors.title.message}</FieldError> : null}
               </label>
 
-              {/* Tipo como chips em vez de select */}
-              <fieldset>
-                <legend className={`${labelClass} mb-2`}>Tipo</legend>
-                <div className="flex flex-wrap gap-2">
-                  {typeOptions.map(([value, label]) => (
-                    <label
-                      key={value}
-                      className={classNames(
-                        "inline-flex min-h-11 cursor-pointer items-center rounded-xl border px-3 py-2 text-xs font-bold transition",
-                        values.type === value
-                          ? "border-amber-300 bg-amber-50 text-amber-900"
-                          : "border-slate-200 bg-white text-slate-600 active:bg-slate-50",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        value={value}
-                        {...register("type")}
-                        className="sr-only"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <label className={labelClass}>
+                Tipo
+                <select {...register("type")} aria-label="Tipo" className={fieldClass}>
+                  {typeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
             </FormSection>
 
-            {/* Data e horário */}
             <FormSection title="Data e horário" icon={<Clock3 size={15} />}>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1.25fr_1fr_1fr]">
                 <label className={`${labelClass} col-span-2 sm:col-span-1`}>
@@ -337,40 +384,49 @@ export function AdminEventFormDialog({
                   <input
                     type="date"
                     {...register("date", { required: "Informe a data." })}
+                    aria-invalid={Boolean(errors.date)}
+                    aria-describedby={errors.date ? "event-date-error" : undefined}
                     className={fieldClass}
                   />
-                  {errors.date ? <FieldError>{errors.date.message}</FieldError> : null}
+                  {errors.date ? <FieldError id="event-date-error">{errors.date.message}</FieldError> : null}
                 </label>
                 <label className={labelClass}>
                   Início
                   <input
                     type="time"
-                    {...register("startTime", { required: "Informe o início." })}
+                    {...startTimeField}
+                    aria-invalid={Boolean(errors.startTime)}
+                    aria-describedby={errors.startTime ? "event-start-error" : undefined}
                     className={fieldClass}
                   />
+                  {errors.startTime ? <FieldError id="event-start-error">{errors.startTime.message}</FieldError> : null}
                 </label>
                 <label className={labelClass}>
                   Término{" "}
-                  <span className="font-medium text-slate-400">(opcional)</span>
+                  <span className="font-medium text-muted">(opcional)</span>
                   <input
                     type="time"
                     {...register("endTime", {
-                      validate: (value) =>
+                      validate: (value, formValues) =>
                         !value ||
-                        !values.startTime ||
-                        value > values.startTime ||
+                        !formValues.startTime ||
+                        value > formValues.startTime ||
                         "Deve ser após o início.",
                     })}
+                    aria-invalid={Boolean(errors.endTime)}
+                    aria-describedby={errors.endTime ? "event-end-error" : "event-duration"}
                     className={fieldClass}
                   />
                   {errors.endTime ? (
-                    <FieldError>{errors.endTime.message}</FieldError>
+                    <FieldError id="event-end-error">{errors.endTime.message}</FieldError>
                   ) : null}
                 </label>
               </div>
+              <p id="event-duration" className="m-0 text-sm text-muted" aria-live="polite">
+                {durationLabel}
+              </p>
             </FormSection>
 
-            {/* Local */}
             <FormSection title="Local" icon={<MapPin size={15} />}>
               <div>
                 <p className={`${labelClass} mb-1.5`}>Igreja ou espaço</p>
@@ -387,42 +443,55 @@ export function AdminEventFormDialog({
                     return (
                       <SelectSheet
                         label="Igreja ou espaço"
+                        eyebrow="Local do evento"
                         options={locationOptions}
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          // Focus the custom location only when it was explicitly chosen,
+                          // never merely because an existing event already has one.
+                          if (value === "__other") window.setTimeout(() => setFocus("location"), 0);
+                        }}
                         placeholder="Local a definir"
                         displayValue={selected?.label}
+                        status={churchesStatus}
+                        disabled={pending}
                       />
                     );
                   }}
                 />
+                {churchesStatus === "error" ? (
+                  <p className="m-0 mt-1.5 text-sm text-muted">
+                    Não foi possível carregar as igrejas cadastradas. Use “Outro local...” para informar o nome.
+                  </p>
+                ) : null}
               </div>
               {locationChoice === "__other" ? (
                 <label className={labelClass}>
                   Nome do local
                   <input
                     {...register("location", {
-                      validate: (value) =>
-                        locationChoice !== "__other" || value.trim()
+                      validate: (value, formValues) =>
+                        formValues.locationChoice !== "__other" || value.trim()
                           ? true
                           : "Informe o local.",
                     })}
+                    aria-invalid={Boolean(errors.location)}
+                    aria-describedby={errors.location ? "event-location-error" : undefined}
                     className={fieldClass}
                     placeholder="Ex.: Salão paroquial"
-                    autoFocus
                   />
                   {errors.location ? (
-                    <FieldError>{errors.location.message}</FieldError>
+                    <FieldError id="event-location-error">{errors.location.message}</FieldError>
                   ) : null}
                 </label>
               ) : null}
             </FormSection>
 
-            {/* Repetição */}
             <FormSection title="Repetição" icon={<Repeat2 size={15} />}>
               <div
                 className="grid grid-cols-3 gap-2"
-                role="group"
+                role="radiogroup"
                 aria-label="Repetição do evento"
               >
                 {(
@@ -435,10 +504,10 @@ export function AdminEventFormDialog({
                   <label
                     key={value}
                     className={classNames(
-                      "flex min-h-11 cursor-pointer items-center justify-center rounded-xl border px-2 py-2.5 text-center text-xs font-bold transition",
+                      "flex min-h-11 cursor-pointer items-center justify-center rounded-xl border px-2 py-2.5 text-center text-sm font-bold transition focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary",
                       repeat === value
-                        ? "border-amber-300 bg-amber-50 text-amber-900"
-                        : "border-slate-200 bg-white text-slate-600",
+                        ? "border-focus bg-canvas text-primary-hover"
+                        : "border-control-border bg-surface text-muted hover:border-muted",
                     )}
                   >
                     <input
@@ -451,6 +520,62 @@ export function AdminEventFormDialog({
                   </label>
                 ))}
               </div>
+
+              {repeat === "weekly" ? (
+                <Controller
+                  control={control}
+                  name="repeatWeekdays"
+                  rules={{
+                    validate: (value) =>
+                      getValues("repeat") !== "weekly" || value.length > 0 || "Escolha pelo menos um dia.",
+                  }}
+                  render={({ field, fieldState }) => (
+                    <fieldset
+                      className="m-0 min-w-0 border-0 p-0"
+                      aria-describedby={fieldState.error ? "event-weekdays-error" : undefined}
+                    >
+                      <legend className={`${labelClass} mb-2`}>Dias da semana</legend>
+                      <div className="grid grid-cols-7 gap-1.5">
+                        {weekdayOptions.map((day) => {
+                          const checked = field.value?.includes(day.value) ?? false;
+                          return (
+                            <label
+                              key={day.value}
+                              className={classNames(
+                                "flex min-h-11 cursor-pointer items-center justify-center rounded-xl border text-sm font-bold transition focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary",
+                                checked
+                                  ? "border-focus bg-canvas text-primary-hover"
+                                  : "border-control-border bg-surface text-muted hover:border-muted",
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={checked}
+                                aria-label={day.long}
+                                onChange={(event) => {
+                                  const current = field.value ?? [];
+                                  field.onChange(
+                                    event.target.checked
+                                      ? [...current, day.value]
+                                      : current.filter((item) => item !== day.value),
+                                  );
+                                }}
+                                onBlur={field.onBlur}
+                              />
+                              <span aria-hidden="true">{day.short}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {fieldState.error ? (
+                        <FieldError id="event-weekdays-error">{fieldState.error.message}</FieldError>
+                      ) : null}
+                    </fieldset>
+                  )}
+                />
+              ) : null}
+
               {repeat !== "none" ? (
                 <label className={labelClass}>
                   Repetir até
@@ -458,26 +583,39 @@ export function AdminEventFormDialog({
                     type="date"
                     min={values.date}
                     {...register("repeatUntil", {
-                      validate: (value) =>
-                        (Boolean(value) && value >= values.date) ||
+                      validate: (value, formValues) =>
+                        formValues.repeat === "none" ||
+                        (Boolean(value) && value >= formValues.date) ||
                         "Escolha uma data igual ou posterior ao evento.",
                     })}
+                    aria-invalid={Boolean(errors.repeatUntil)}
+                    aria-describedby={errors.repeatUntil ? "event-repeat-error" : undefined}
                     className={fieldClass}
                   />
                   {errors.repeatUntil ? (
-                    <FieldError>{errors.repeatUntil.message}</FieldError>
+                    <FieldError id="event-repeat-error">{errors.repeatUntil.message}</FieldError>
                   ) : null}
                 </label>
               ) : null}
+
+              {recurrenceSummary ? (
+                <p
+                  className="m-0 rounded-xl bg-canvas px-3.5 py-3 text-sm text-ink"
+                  aria-live="polite"
+                  data-testid="recurrence-summary"
+                >
+                  {recurrenceSummary}
+                </p>
+              ) : null}
             </FormSection>
 
-            {/* Descrição */}
-            <div className="border-b border-slate-100 px-4 py-2 sm:px-6">
+            <div className="border-b border-line px-4 py-2 sm:px-6">
               <button
                 type="button"
                 onClick={() => setDetailsOpen((open) => !open)}
                 aria-expanded={detailsOpen}
-                className="flex min-h-12 w-full items-center justify-between gap-3 text-left text-sm font-bold text-slate-700"
+                aria-controls="event-description-panel"
+                className="flex min-h-12 w-full items-center justify-between gap-3 text-left text-sm font-bold text-ink"
               >
                 <span>{detailsOpen ? "Descrição" : "Adicionar descrição"}</span>
                 <ChevronDown
@@ -486,59 +624,54 @@ export function AdminEventFormDialog({
                 />
               </button>
               {detailsOpen ? (
-                <div className="pb-3">
+                <div id="event-description-panel" className="pb-3">
                   <textarea
                     {...register("description")}
+                    aria-label="Descrição do evento"
                     rows={4}
-                    className={`${fieldClass} mt-0 resize-none`}
+                    className={`${fieldClass} mt-0 resize-y`}
                     placeholder="Orientações e informações úteis"
                   />
                 </div>
               ) : null}
             </div>
-
-            {/* Excluir evento — dentro do formulário, separado do footer */}
-            {editor.kind === "edit" ? (
-              <div className="px-4 py-3 sm:px-6">
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  disabled={pending}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-sm font-bold text-red-700 transition hover:bg-red-100 active:scale-[0.98] disabled:opacity-60"
-                >
-                  <Trash2 size={16} />
-                  Excluir evento
-                </button>
-              </div>
-            ) : null}
+            </fieldset>
           </div>
 
-          {/* Erro de API — acima dos botões de ação, sempre visível */}
-          {error ? (
-            <p
-              role="alert"
-              className="mx-4 mb-0 mt-0 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:mx-6"
-            >
-              {error}
-            </p>
+          {generalError ? (
+            <AdminNotice className="mx-4 mt-3 md:mx-6">{generalError}</AdminNotice>
           ) : null}
 
-          <footer className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-4 sm:pb-4">
-            {editor.kind !== "edit" ? (
+          <footer className="flex flex-wrap items-center gap-2 border-t border-line bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-4 sm:pb-4">
+            {editor.kind === "edit" ? (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={onDelete}
                 disabled={pending}
-                className="h-11 rounded-xl px-3 text-sm font-bold text-slate-500 hover:bg-slate-50"
+                aria-label="Excluir evento"
+                className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold text-danger transition hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger disabled:opacity-60"
               >
-                Cancelar
+                <Trash2 size={16} aria-hidden="true" />
+                <span className="hidden md:inline">Excluir</span>
               </button>
             ) : null}
+            {unchangedEdit ? (
+              <p className="m-0 hidden text-sm text-muted md:block">Nenhuma alteração para salvar</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => requestCloseRef.current()}
+              disabled={pending}
+              className={`${buttonClasses.secondary.md} md:ml-auto`}
+            >
+              Cancelar
+            </button>
             <button
               type="submit"
-              disabled={pending}
-              className="h-11 flex-1 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60 sm:flex-none sm:min-w-44"
+              disabled={pending || unchangedEdit}
+              className={`${buttonClasses.primary.md} flex-1 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted md:min-w-44 md:flex-none`}
             >
+              {pending ? <LoaderCircle size={15} aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : null}
               {pending
                 ? "Salvando..."
                 : editor.kind === "edit"
@@ -550,30 +683,37 @@ export function AdminEventFormDialog({
           </footer>
         </form>
       </section>
+      {discardOpen ? <DiscardChangesDialog onStay={() => setDiscardOpen(false)} onLeave={() => { setDiscardOpen(false); onClose(); }} /> : null}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// SelectSheet — botão que abre bottom-sheet com opções, sem select nativo
+// SelectSheet — botão que abre bottom-sheet (mobile) ou diálogo (desktop) com opções
 // ---------------------------------------------------------------------------
 
 type SelectOption = { value: string; label: string };
 
 function SelectSheet({
   label,
+  eyebrow,
   options,
   value,
   onChange,
   placeholder,
   displayValue,
+  status = "ready",
+  disabled = false,
 }: {
   label: string;
+  eyebrow: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   displayValue?: string;
+  status?: ChurchesStatus;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const sheetRef = useRef<HTMLElement>(null);
@@ -628,24 +768,25 @@ function SelectSheet({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        disabled={disabled}
         aria-haspopup="dialog"
         aria-label={`${label}: ${shown}`}
-        className="mt-1.5 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus-visible:border-amber-400 focus-visible:ring-3 focus-visible:ring-amber-100"
+        className={`${fieldClasses.lg} mt-1.5 flex items-center justify-between gap-3 text-left text-sm`}
       >
         <span
           className={classNames(
             "truncate text-left",
-            isEmpty ? "text-slate-400" : isOther ? "font-medium text-slate-700" : "font-semibold text-slate-950",
+            isEmpty ? "text-muted" : isOther ? "font-medium text-ink" : "font-semibold text-ink",
           )}
         >
           {shown}
         </span>
-        <ChevronRight size={15} className="flex-none text-slate-400" />
+        <ChevronRight size={15} className="flex-none text-muted" />
       </button>
 
       {open ? (
         <div
-          className="fixed inset-0 z-[75] flex items-end bg-slate-950/35 backdrop-blur-[1px]"
+          className="fixed inset-0 z-[75] flex items-end justify-center bg-black/30 md:items-center md:p-5"
           onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <section
@@ -653,33 +794,39 @@ function SelectSheet({
             role="dialog"
             aria-modal="true"
             aria-label={label}
-            className="max-h-[70dvh] w-full overflow-y-auto rounded-t-2xl bg-white pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-2xl"
+            className="max-h-[70dvh] w-full overflow-y-auto rounded-t-2xl bg-white pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-2xl md:max-w-md md:rounded-2xl md:pb-3"
           >
-            {/* Drag handle */}
-            <div aria-hidden="true" className="mb-2 flex justify-center">
-              <span className="h-1 w-10 rounded-full bg-slate-200" />
+            <div aria-hidden="true" className="mb-2 flex justify-center md:hidden">
+              <span className="h-1 w-10 rounded-full bg-line" />
             </div>
 
-            {/* Header */}
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 pb-3">
+            <div className="flex items-center justify-between gap-3 border-b border-line px-4 pb-3">
               <div>
-                <p className="m-0 text-[0.58rem] font-extrabold uppercase tracking-[0.14em] text-amber-700">
-                  Local do evento
-                </p>
-                <h2 className="m-0 mt-0.5 text-base font-bold text-slate-950">{label}</h2>
+                <h2 className="m-0 text-base font-semibold text-ink">{label}</h2>
+                <p className="m-0 mt-1 text-sm text-muted">{eyebrow}</p>
               </div>
               <button
                 ref={closeSheetButtonRef}
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Fechar"
-                className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-slate-100 text-slate-600"
+                className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-canvas text-muted"
               >
                 <X size={17} />
               </button>
             </div>
 
-            {/* Options list */}
+            {status === "loading" ? (
+              <p className="m-0 flex items-center gap-2 px-5 pt-3 text-sm text-muted" role="status">
+                <LoaderCircle size={14} aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+                Carregando igrejas cadastradas…
+              </p>
+            ) : status === "error" ? (
+              <p className="m-0 px-5 pt-3 text-sm text-muted" role="status">
+                Igrejas cadastradas indisponíveis no momento.
+              </p>
+            ) : null}
+
             <ul role="listbox" aria-label={label} className="grid gap-0 px-2 py-2">
               {options.map((opt) => {
                 const selected = opt.value === value;
@@ -692,17 +839,17 @@ function SelectSheet({
                         setOpen(false);
                       }}
                       className={classNames(
-                        "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3 text-sm transition active:bg-slate-100",
+                        "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3 text-sm transition hover:bg-selection/35 active:bg-canvas",
                         selected
-                          ? "bg-amber-50 font-bold text-amber-900"
+                          ? "bg-canvas font-bold text-primary-hover"
                           : opt.value === "__other"
-                            ? "font-medium text-slate-500"
-                            : "font-semibold text-slate-800",
+                            ? "font-medium text-muted"
+                            : "font-semibold text-ink",
                       )}
                     >
                       <span className="truncate">{opt.label}</span>
                       {selected ? (
-                        <Check size={16} className="flex-none text-amber-600" />
+                        <Check size={16} className="flex-none text-primary" />
                       ) : null}
                     </button>
                   </li>
@@ -728,9 +875,9 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid gap-3 border-b border-slate-100 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
-      <h3 className="m-0 flex items-center gap-2 text-sm font-bold text-slate-950">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-800">
+    <section className="grid gap-3 border-b border-line px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+      <h3 className="m-0 flex items-center gap-2 text-sm font-bold text-ink">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-canvas text-primary">
           {icon}
         </span>
         {title}
@@ -740,10 +887,14 @@ function FormSection({
   );
 }
 
-function FieldError({ children }: { children: React.ReactNode }) {
+function FieldError({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
-    <span className="mt-1 block text-xs font-medium text-red-600">{children}</span>
+    <span id={id} className={fieldErrorClassName}>{children}</span>
   );
+}
+
+function hasMappedFieldErrors(error: EventFormError) {
+  return Object.entries(error.fields ?? {}).some(([field, messages]) => serverFieldMap[field] && messages.length);
 }
 
 function normalize(value = "") {
@@ -752,6 +903,68 @@ function normalize(value = "") {
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-BR")
     .trim();
+}
+
+function minutesOf(time?: string) {
+  if (!time) return Number.NaN;
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function timeOf(totalMinutes: number) {
+  return `${String(Math.floor(totalMinutes / 60)).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}`;
+}
+
+function formatDuration(start?: string, end?: string) {
+  if (!start) return "";
+  if (!end) return "Sem horário de término definido.";
+  const total = minutesOf(end) - minutesOf(start);
+  if (!(total > 0)) return "";
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  const label = hours && minutes ? `${hours}h${String(minutes).padStart(2, "0")}` : hours ? `${hours}h` : `${minutes} min`;
+  return `Duração: ${label}`;
+}
+
+/** Descreve a repetição em linguagem natural, com a quantidade estimada de ocorrências. */
+function describeRecurrence(values: Pick<Values, "repeat" | "date" | "startTime" | "repeatUntil" | "repeatWeekdays">) {
+  if (values.repeat === "none" || !values.date) return "";
+  const until = values.repeatUntil && values.repeatUntil >= values.date ? values.repeatUntil : "";
+  const time = values.startTime ? ` às ${values.startTime}` : "";
+  const day = new Date(`${values.date}T12:00:00`).getDate();
+  let rule: string;
+  if (values.repeat === "weekly") {
+    const selected = weekdayOptions.filter((option) => values.repeatWeekdays?.includes(option.value));
+    if (!selected.length) return "";
+    rule = selected.length === 7
+      ? `Repete todos os dias${time}`
+      : `Repete às ${new Intl.ListFormat("pt-BR", { type: "conjunction" }).format(selected.map((option) => option.plural))}${time}`;
+  } else {
+    rule = `Repete todo dia ${day} de cada mês${time}`;
+  }
+  if (!until) return `${rule}. Escolha até quando repetir.`;
+  const count = countOccurrences(values.repeat, values.date, until, values.repeatWeekdays ?? []);
+  const countLabel = count === 1 ? "1 ocorrência" : `${count} ocorrências`;
+  const shortMonthsHint = values.repeat === "monthly" && day > 28 ? " Meses sem esse dia ficam sem o evento." : "";
+  return `${rule}, até ${formatShortDate(until)} (${countLabel}).${shortMonthsHint}`;
+}
+
+function countOccurrences(repeat: RepeatOption, start: string, until: string, weekdays: number[]) {
+  const cursor = new Date(`${start}T12:00:00`);
+  const last = new Date(`${until}T12:00:00`);
+  const day = cursor.getDate();
+  let count = 0;
+  // Limite de segurança: aproximadamente 10 anos.
+  for (let guard = 0; cursor <= last && guard < 3700; guard += 1) {
+    if (repeat === "weekly" ? weekdays.includes(cursor.getDay()) : cursor.getDate() === day) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function formatShortDate(value?: string) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("pt-BR").format(new Date(`${value}T12:00:00`));
 }
 
 function formatDateLabel(value?: string) {

@@ -1,11 +1,13 @@
 import { lazy, Suspense } from "react";
 import type { PublicChurch } from "../../shared/api/churches";
+import type { ChurchMapStyle } from "./ChurchMapStylePicker";
+import { loadChurchMap } from "./churchMapLoading";
 
-const ChurchesMapInner = lazy(() => import("./ChurchesMapInner"));
+const ChurchesMapInner = lazy(loadChurchMap);
 
-export function ChurchesMap(props: { churches: PublicChurch[]; selectedId?: string; onSelect: (church: PublicChurch) => void; userLocation?: { latitude: number; longitude: number } }) {
+export function ChurchesMap(props: { churches: PublicChurch[]; mapStyle?: ChurchMapStyle; selectedId?: string; focusSelection?: boolean; carouselHeight?: number; onSelect: (church: PublicChurch) => void; onSelectGroup: (churches: PublicChurch[]) => void; userLocation?: { latitude: number; longitude: number }; panelExpanded?: boolean; overviewKey?: number }) {
   if (import.meta.env.MODE === "test") {
-    return <div className="absolute inset-0 z-0 isolate bg-slate-200" aria-label="Mapa de igrejas" />;
+    return <div className="absolute inset-0 z-0 isolate bg-map-background" aria-label="Mapa de igrejas" />;
   }
 
   return (
@@ -17,8 +19,8 @@ export function ChurchesMap(props: { churches: PublicChurch[]; selectedId?: stri
 
 function MapFallback() {
   return (
-    <div className="absolute inset-0 z-0 isolate overflow-hidden bg-slate-200" aria-label="Carregando mapa">
-      <div className="absolute inset-0 animate-pulse bg-[linear-gradient(135deg,#e2e8f0,#f8fafc,#cbd5e1)]" />
+    <div role="status" className="absolute inset-0 z-0 isolate bg-map-background">
+      <span className="sr-only">Carregando mapa…</span>
     </div>
   );
 }

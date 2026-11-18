@@ -7,7 +7,9 @@ import {
 import { Link } from "react-router-dom";
 import type { ConfessionScheduleItem, HomeActionsConfig, HomeHeaderConfig } from "../../shared/api/tenants";
 import { classNames } from "../../shared/lib/classNames";
-import { PublicDesktopNavigation } from "../../shared/components/PublicNavigation";
+import { CoverImage } from "../../shared/components/CoverImage";
+import { PublicPageCover } from "../../shared/components/PublicPageCover";
+import { resolveParishCover } from "../../shared/lib/parishCover";
 import { ConfessionAction } from "./ConfessionDialog";
 
 type TopRightIcon = "home" | "links";
@@ -52,14 +54,13 @@ type HomeAction = {
 };
 
 const actionCardBaseClass = (preview: boolean) =>
-  `flex min-h-[54px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition duration-200 ${preview ? "" : "md:min-h-[60px] md:px-4 md:py-3"}`;
+  `grid min-h-[70px] min-w-0 grid-cols-[1.125rem_minmax(0,1fr)] content-center items-center gap-x-2 gap-y-1 rounded-xl border px-3 py-3 text-left transition-colors duration-200 ${preview ? "" : "sm:px-4"}`;
 
 export function HomeHeader({
   tenantName,
   cidade,
   headerConfig,
   fallbackImageUrl,
-  homeHref,
   linksHref,
   agendaHref,
   contactHref,
@@ -76,8 +77,6 @@ export function HomeHeader({
   const visual = resolveVisual(headerConfig, fallbackImageUrl);
   const compact = variant === "compact";
 
-  const resolvedHomeHref = homeHref || resolveBaseHref(agendaHref);
-  const tenantSlug = resolvedHomeHref.split("/").filter(Boolean)[0] ?? "";
 
   const confessionAction: HomeAction = {
     label: "Confissões",
@@ -87,12 +86,23 @@ export function HomeHeader({
 
   const secretariaAction: HomeAction = {
     label: "Secretaria",
-    subtitle: "Falar no WhatsApp",
+    subtitle: contactHref ? "Falar no WhatsApp" : "Contato não informado",
     href: contactHref,
   };
 
   const resolvedTopRightIcon =
     topRightIcon || inferTopRightIcon(topRightLabel);
+
+  if (!compact) {
+    return (
+      <PublicPageCover title={tenantName} cityLabel={cidade} headerConfig={headerConfig} fallbackImageUrl={fallbackImageUrl} variant="home" preview={preview}>
+        <div className="mt-5 grid grid-cols-2 gap-3 md:max-w-xl">
+          <SecretaryAction action={secretariaAction} preview={preview} />
+          <ConfessionAction action={confessionAction} schedule={confessionSchedule} preview={preview} appearance="light" />
+        </div>
+      </PublicPageCover>
+    );
+  }
 
   return (
     <header
@@ -104,12 +114,12 @@ export function HomeHeader({
       style={visual.style}
     >
       {visual.imageUrl ? (
-        <img
+        <CoverImage
           src={visual.imageUrl}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-20 h-full w-full scale-[1.02] object-cover"
-          style={{ opacity: visual.imageOpacity }}
+          fallbackSrc={fallbackImageUrl}
+          className="absolute inset-0 -z-20"
+          imageOpacity={visual.imageOpacity}
+          overlayClassName="hidden"
         />
       ) : null}
 
@@ -121,7 +131,7 @@ export function HomeHeader({
       )}>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           {cidade?.trim() ? (
-            <span className="inline-flex min-h-8 max-w-full min-w-0 items-center gap-1.5 justify-self-start rounded-full border border-white/20 bg-black/10 px-3 py-1 text-xs font-semibold text-white/90 shadow-sm backdrop-blur-xl">
+            <span className="inline-flex min-h-8 max-w-full min-w-0 items-center gap-1.5 justify-self-start rounded-full border border-white/20 bg-black/10 px-3 py-1 text-[13px] font-semibold text-white/90 shadow-sm backdrop-blur-xl">
               <MapPin size={13} aria-hidden="true" />
 
               <span className="truncate">{cidade.trim()}</span>
@@ -130,12 +140,12 @@ export function HomeHeader({
             <span aria-hidden="true" />
           )}
 
-          {!preview ? <PublicDesktopNavigation tenantSlug={tenantSlug} variant="onImage" /> : null}
+
 
           {compact && topRightHref ? (
             <Link
               to={topRightHref ?? linksHref}
-              className="inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/10 px-3 py-1 text-xs font-bold text-white/90 backdrop-blur-xl transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent md:hidden"
+              className="inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/10 px-3 py-1 text-[13px] font-bold text-white/90 backdrop-blur-xl transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent md:hidden"
             >
               {resolvedTopRightIcon === "home" ? (
                 <Home size={14} aria-hidden="true" />
@@ -152,7 +162,7 @@ export function HomeHeader({
 
         <div className={classNames("mt-auto", preview ? "max-w-3xl pt-7" : compact ? "pt-8 md:pt-10" : "max-w-3xl pt-7 md:pt-12")}>
           {!compact ? (
-            <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-[0.15em] text-amber-100/85 md:text-[0.68rem] md:tracking-[0.16em]">
+            <p className="mb-1 text-[13px] font-bold uppercase tracking-[0.15em] text-accent/85 md:text-[13px] md:tracking-[0.16em]">
               {getGreeting()} — seja bem-vindo
             </p>
           ) : null}
@@ -160,13 +170,13 @@ export function HomeHeader({
           {compact ? (
             <div className="flex items-end justify-between gap-4">
               <div className="min-w-0 max-w-3xl">
-                <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-amber-100/80">{tenantName}</p>
+                <p className="mb-1 text-[13px] font-bold uppercase tracking-[0.15em] text-accent/80">{tenantName}</p>
                 <h1 className="m-0 max-w-[26ch] text-[1.75rem] font-bold leading-[1.05] tracking-[-0.025em] text-white drop-shadow-md sm:text-[2.1rem] md:text-[2.5rem]">
                   {compactTitle || tenantName}
                 </h1>
-                {compactDescription ? <p className="mb-0 mt-2 max-w-xl text-xs font-medium leading-5 text-white/70 md:text-sm">{compactDescription}</p> : null}
+                {compactDescription ? <p className="mb-0 mt-2 max-w-xl text-[13px] font-medium leading-5 text-white/70 md:text-sm">{compactDescription}</p> : null}
               </div>
-              {compactBadge ? <span className="mb-0.5 flex-none rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/90 shadow-sm backdrop-blur-xl">{compactBadge}</span> : null}
+              {compactBadge ? <span className="mb-0.5 flex-none rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-bold text-white/90 shadow-sm backdrop-blur-xl">{compactBadge}</span> : null}
             </div>
           ) : (
             <h1 className={classNames("m-0 max-w-[22ch] text-[1.95rem] font-bold leading-[1.06] tracking-[-0.025em] text-white drop-shadow-md", preview ? "" : "sm:text-[2.4rem] md:max-w-[18ch] md:text-5xl")}>
@@ -200,16 +210,16 @@ function SecretaryAction({
 }) {
   const content = (
     <>
-      <span className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-amber-100 text-amber-700">
-        <MessageCircleMore size={16} aria-hidden="true" />
+      <span className="inline-flex items-center justify-center">
+        <MessageCircleMore size={18} aria-hidden="true" />
       </span>
 
-      <span className="grid min-w-0 flex-1">
-        <span className="truncate text-xs font-extrabold leading-tight">
+      <span className="contents">
+        <span className="min-w-0 break-words text-sm font-bold leading-5">
           {action.label}
         </span>
 
-        <small className="truncate text-[0.65rem] leading-tight text-inherit opacity-70">
+        <small className="col-span-2 text-[13px] font-medium leading-5 text-inherit">
           {action.subtitle}
         </small>
       </span>
@@ -222,7 +232,7 @@ function SecretaryAction({
         aria-disabled="true"
         className={[
           actionCardBaseClass(preview),
-          "cursor-not-allowed border-white/15 bg-white/10 text-white/60 backdrop-blur-md",
+          "cursor-not-allowed border-line bg-canvas text-muted",
         ].join(" ")}
       >
         {content}
@@ -232,9 +242,9 @@ function SecretaryAction({
 
   const className = [
     actionCardBaseClass(preview),
-          "border-white bg-white text-slate-950 shadow-sm",
-          "hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+          "border-transparent bg-accent text-accent-ink",
+          "hover:bg-accent/90",
+    "focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-focus",
   ].join(" ");
 
   if (isExternalHref(action.href)) {
@@ -262,10 +272,9 @@ function resolveVisual(
   fallbackImageUrl?: string | null,
 ) {
   const gradientFrom =
-    headerConfig?.gradientFrom?.trim() || "#7c2d12";
+    headerConfig?.gradientFrom?.trim() || "#62446e";
 
-  const imageUrl =
-    headerConfig?.imageUrl?.trim() || fallbackImageUrl?.trim() || null;
+  const imageUrl = resolveParishCover({ headerConfig, fallbackImageUrl });
 
   const imageOpacity =
     typeof headerConfig?.imageOpacity === "number"
@@ -313,20 +322,6 @@ function isExternalHref(href: string) {
   return /^(https?:\/\/|mailto:|tel:|sms:|whatsapp:)/i.test(
     href,
   );
-}
-
-function resolveBaseHref(agendaHref: string) {
-  const hrefWithoutQueryOrHash = agendaHref.replace(
-    /[?#].*$/,
-    "",
-  );
-
-  const resolvedHref = hrefWithoutQueryOrHash.replace(
-    /\/(?:calendario|agenda)\/?$/,
-    "",
-  );
-
-  return resolvedHref || "/";
 }
 
 function clamp(

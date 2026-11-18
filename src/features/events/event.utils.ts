@@ -1,5 +1,13 @@
 import type { CalendarEvent } from "../../shared/api/events";
 
+export type EventDisplayState = "scheduled" | "next" | "happening" | "finished";
+
+export function getEventDisplayState(event: CalendarEvent, now: Date, nextOccurrenceId?: string): EventDisplayState {
+  if (isEventHappeningNow(event, now)) return "happening";
+  if (hasEventFinished(event, now)) return "finished";
+  return event.occurrenceId === nextOccurrenceId ? "next" : "scheduled";
+}
+
 export function hasEventFinished(event: CalendarEvent, now: Date) {
   const end = event.end ? new Date(event.end) : null;
   const start = new Date(event.start);
@@ -17,9 +25,9 @@ export function isEventHappeningNow(event: CalendarEvent, now: Date) {
   return start.getTime() <= now.getTime() && end.getTime() >= now.getTime();
 }
 
-export function formatEventTimeRange(event: CalendarEvent) {
+export function formatEventTimeRange(event: CalendarEvent, separator = " - ") {
   return event.end
-    ? `${formatEventTime(event.start)} - ${formatEventTime(event.end)}`
+    ? `${formatEventTime(event.start)}${separator}${formatEventTime(event.end)}`
     : formatEventTime(event.start);
 }
 

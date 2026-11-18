@@ -1,11 +1,8 @@
 import type { CalendarEvent } from "../../shared/api/events";
+import { toDateKey } from "../../shared/lib/date";
+export { toDateKey } from "../../shared/lib/date";
 
 export const weekdayLabels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-
-export function toDateKey(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
 
 export function parseDateKey(value: string | null) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -30,12 +27,12 @@ export function addDays(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
 }
 
-export function startOfWeek(date: Date) {
-  return addDays(date, -date.getDay());
+export function startOfWeek(date: Date, mondayFirst = false) {
+  return addDays(date, -((date.getDay() + (mondayFirst ? 6 : 0)) % 7));
 }
 
-export function getWeekDays(date: Date) {
-  const start = startOfWeek(date);
+export function getWeekDays(date: Date, mondayFirst = false) {
+  const start = startOfWeek(date, mondayFirst);
   return Array.from({ length: 7 }, (_, index) => addDays(start, index));
 }
 
@@ -112,4 +109,19 @@ export function getEventCountsByDate(events: CalendarEvent[]) {
     counts.set(key, (counts.get(key) ?? 0) + 1);
     return counts;
   }, new Map<string, number>());
+}
+
+/** Move a data em meses preservando o dia, limitado ao último dia do mês de destino. */
+export function shiftMonth(date: Date, amount: number) {
+  const target = new Date(date.getFullYear(), date.getMonth() + amount, 1);
+  const lastDay = endOfMonth(target).getDate();
+  return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), lastDay));
+}
+
+/** Primeiro e último dia exibidos na grade mensal (semanas completas, segunda a domingo). */
+export function getMonthGridBounds(date: Date) {
+  return {
+    start: startOfWeek(startOfMonth(date), true),
+    end: addDays(startOfWeek(endOfMonth(date), true), 6),
+  };
 }

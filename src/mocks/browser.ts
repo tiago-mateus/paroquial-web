@@ -1,4 +1,5 @@
 import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers";
+import { launchMode } from "../shared/launchMode";
+import { dataHandlers, handlers } from "./handlers";
 
-export const worker = setupWorker(...handlers);
+export const worker = setupWorker(...(launchMode ? dataHandlers : handlers));

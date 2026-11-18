@@ -1,0 +1,85 @@
+/* Compatibility aliases for existing controls; the source of truth is @theme. */
+@layer base {
+  .admin-workspace, .admin-theme {
+    --admin-bg: var(--color-canvas);
+    --admin-surface: var(--color-surface);
+    --admin-text: var(--color-ink);
+    --admin-muted: var(--color-muted);
+    --admin-border: var(--color-line);
+    --admin-primary: var(--color-primary);
+    --admin-primary-hover: var(--color-primary-hover);
+    --admin-selected: var(--color-selection);
+    --admin-focus: var(--color-focus);
+    --admin-success: var(--color-success);
+    --admin-danger: var(--color-danger);
+    --admin-warning: var(--color-warning);
+    --admin-space: .5rem;
+    --admin-radius: .75rem;
+    --admin-header-offset: 0px;
+    --admin-sidebar-width: 0px;
+    --admin-nav-offset: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    --admin-fab-size: 3.5rem;
+    --admin-fab-gap: 1rem;
+    --admin-fab-reserve: calc(var(--admin-fab-size) + 2 * var(--admin-fab-gap));
+    --admin-save-reserve: 10rem;
+    @apply font-sans text-base leading-normal text-ink;
+  }
+
+  @media (min-width: 64rem) {
+    .admin-workspace {
+      --admin-sidebar-width: 16rem;
+      --admin-nav-offset: 0px;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .admin-workspace { --admin-sidebar-width: 17rem; }
+  }
+}
+@layer components {
+  .admin-save-content { padding-bottom: 2rem; }
+  .admin-save-content:has(.admin-save-bar) { padding-bottom: var(--admin-save-reserve); }
+  .admin-save-bar { bottom: var(--admin-nav-offset); }
+}
+
+/* Responsive layout rules override the shared button geometry utilities.
+   Same lg breakpoint as the sidebar. Menus (100), dialogs (80+) and
+   bottom navigation (50) stay above the page creation action (30). */
+@media (width < 64rem) {
+  .admin-create-action {
+    position: fixed;
+    z-index: 30;
+    right: max(var(--admin-fab-gap), env(safe-area-inset-right, 0px));
+    bottom: calc(var(--admin-nav-offset) + var(--admin-fab-gap));
+    width: var(--admin-fab-size);
+    height: var(--admin-fab-size);
+    min-height: var(--admin-fab-size);
+    padding: 0;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgb(22 59 49 / 20%);
+  }
+  .admin-create-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  [data-testid="admin-page"]:has(.admin-create-action):not(:has(.admin-church-map)) {
+    padding-bottom: var(--admin-fab-reserve);
+  }
+  .admin-church-map-actions { bottom: var(--admin-fab-reserve); }
+  .admin-church-map #admin-church-search-panel {
+    max-height: calc(100% - var(--admin-fab-reserve) - 4rem);
+  }
+  /* Hide while entering text (including with a virtual keyboard), or
+     during a modal/map task. CSS leaves breakpoint selection to layout. */
+  .admin-create-action[data-mobile-hidden],
+  .admin-workspace:has(input:focus, textarea:focus, select:focus, [contenteditable="true"]:focus) .admin-create-action,
+  body:has([aria-modal="true"]) .admin-create-action {
+    visibility: hidden;
+  }
+}

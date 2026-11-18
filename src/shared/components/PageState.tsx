@@ -13,7 +13,7 @@ export function PageState({ title, description, icon, action, className, compact
   return (
     <div
       className={[
-        "rounded-3xl border border-slate-100 bg-white px-4 py-5 text-center",
+        "rounded-2xl bg-surface px-5 py-6 text-center",
         compact ? "py-4" : "",
         className,
       ]
@@ -21,21 +21,21 @@ export function PageState({ title, description, icon, action, className, compact
         .join(" ")}
     >
       {icon ? (
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-50 text-slate-500">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-canvas text-muted">
           {icon}
         </span>
       ) : null}
-      <strong className={icon ? "mt-3 block text-sm font-bold text-slate-950" : "block text-sm font-bold text-slate-950"}>
+      <strong className={icon ? "mt-3 block text-sm font-bold text-ink" : "block text-sm font-bold text-ink"}>
         {title}
       </strong>
-      {description ? <p className="mx-auto mt-1 max-w-[26rem] text-sm leading-relaxed text-slate-500">{description}</p> : null}
+      {description ? <p className="mx-auto mt-1 max-w-[26rem] text-sm leading-relaxed text-muted">{description}</p> : null}
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </div>
   );
 }
 
 export function LoadingState({ title = "Carregando...", description }: Partial<PageStateProps>) {
-  return <PageState title={title} description={description} compact />;
+  return <div role="status"><PageState title={title} description={description} compact /></div>;
 }
 
 export function ErrorState({
@@ -43,7 +43,7 @@ export function ErrorState({
   description = "Tente novamente mais tarde.",
   action,
 }: Partial<PageStateProps>) {
-  return <PageState title={title} description={description} action={action} compact />;
+  return <div role="alert"><PageState title={title} description={description} action={action} compact /></div>;
 }
 
 export function EmptyState(props: PageStateProps) {
