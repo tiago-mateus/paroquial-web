@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import process from "node:process";
 import { parishApiRoutes } from "./src/shared/api/parishApiRoutes";
 
