@@ -1,5 +1,5 @@
 import { get, put } from "@vercel/blob";
-import { parseTheme } from "../src/shared/theme/palette";
+import { parseTheme } from "../src/shared/theme/palette.js";
 import launchSession from "./launch-session.js";
 
 function json(body: object, status = 200) {
