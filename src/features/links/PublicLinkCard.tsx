@@ -1,10 +1,24 @@
 import { ArrowUpRight, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PublicLink } from "../../shared/api/links";
+import { SkeletonShape } from "../../shared/components/PublicSkeleton";
 import { trackPublicLinkClick } from "./linkAnalytics";
 import { getLinkDestination, normalizeLinkUrl, resolveLinkColor, resolveLinkIcon, resolveLinkTemplate } from "./linkPresentation";
 
 const linkCardLayout = "grid min-h-20 grid-cols-[2.5rem_minmax(0,1fr)_1.25rem] items-center gap-3 px-4 py-3.5";
+
+export function PublicLinkCardSkeleton({ short = false }: { short?: boolean }) {
+  return (
+    <div className={`${linkCardLayout} rounded-xl border border-neutral-200 bg-neutral-50`}>
+      <SkeletonShape className="size-10 rounded-xl" />
+      <div className="min-w-0 space-y-2">
+        <SkeletonShape className={`h-4 max-w-48 rounded ${short ? "w-3/5" : "w-4/5"}`} />
+        <SkeletonShape className="h-3 w-2/5 max-w-24 rounded" />
+      </div>
+      <SkeletonShape className="size-3.5 justify-self-center rounded" />
+    </div>
+  );
+}
 
 export function PublicLinkCard({ link, tenantSlug }: { link: PublicLink; tenantSlug: string }) {
   const [opening, setOpening] = useState(false);

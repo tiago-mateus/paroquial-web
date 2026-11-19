@@ -6,11 +6,15 @@ import { getTenantLinks } from "../../shared/api/links";
 import { usePublicChurches } from "../../shared/hooks/usePublicChurches";
 import { usePublicTenant } from "../../shared/hooks/usePublicTenant";
 import { resolveParishCover } from "../../shared/lib/parishCover";
-import { PublicPageCover } from "../../shared/components/PublicPageCover";
+import { PublicPageCover, PublicPageCoverSkeleton } from "../../shared/components/PublicPageCover";
+import { SkeletonStatus } from "../../shared/components/PublicSkeleton";
 import { EmptyState, ErrorState } from "../../shared/components/PageState";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
-import { PublicLinkCard } from "./PublicLinkCard";
+import { PublicLinkCard, PublicLinkCardSkeleton } from "./PublicLinkCard";
 import { normalizeLinkUrl } from "./linkPresentation";
+
+const linksSectionLayout = "mx-auto mt-5 max-w-4xl px-5 sm:mt-8 sm:px-6";
+const linksGridLayout = "grid gap-3 md:grid-cols-2 md:gap-4";
 
 export function PublicLinksPage() {
   const { tenantSlug = "" } = useParams();
@@ -39,7 +43,7 @@ export function PublicLinksPage() {
         headerConfig={tenantQuery.data.homeHeader}
         fallbackImageUrl={coverImage}
       />
-      <section className="mx-auto mt-5 max-w-4xl px-5 sm:mt-8 sm:px-6" aria-labelledby="public-links-heading">
+      <section className={linksSectionLayout} aria-labelledby="public-links-heading">
         {linksQuery.isLoading ? (
           <LinksGridSkeleton />
         ) : linksQuery.isError ? (
@@ -49,7 +53,7 @@ export function PublicLinksPage() {
             action={<button type="button" onClick={() => linksQuery.refetch()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-hover"><RefreshCw aria-hidden="true" size={16} /> Tentar novamente</button>}
           />
         ) : links.length ? (
-          <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2 md:gap-4">
+          <ul className={`m-0 list-none p-0 ${linksGridLayout}`}>
             {links.map((link) => <li key={link.id} className="min-w-0"><PublicLinkCard link={link} tenantSlug={tenantSlug} /></li>)}
           </ul>
         ) : (
@@ -60,10 +64,23 @@ export function PublicLinksPage() {
   );
 }
 
+function LinksGridPlaceholder() {
+  return <div className={linksGridLayout}>
+    {[0, 1, 2, 3].map(item => <PublicLinkCardSkeleton key={item} short={item % 2 === 1} />)}
+  </div>;
+}
+
 function LinksGridSkeleton() {
-  return <div className="grid gap-3 md:grid-cols-2 md:gap-4" aria-label="Carregando links" aria-busy="true">{[0, 1, 2, 3].map((item) => <div key={item} className="h-20 animate-pulse rounded-xl border border-line bg-surface motion-reduce:animate-none" />)}<span className="sr-only" role="status">Carregando links...</span></div>;
+  return <SkeletonStatus label="Carregando links…"><LinksGridPlaceholder /></SkeletonStatus>;
 }
 
 function LinksPageSkeleton() {
-  return <main className="min-h-[calc(100dvh-4.5rem)] max-w-none bg-canvas p-0 pb-10"><div className="mx-auto max-w-6xl px-5 pt-4 sm:px-6 sm:pt-6" aria-hidden="true"><div className="mb-3 h-8 w-32 rounded-lg bg-selection motion-safe:animate-pulse sm:h-11" /><div className="h-56 rounded-2xl bg-selection motion-safe:animate-pulse sm:h-64" /></div><div className="mx-auto mt-5 max-w-4xl px-5 sm:mt-8 sm:px-6"><LinksGridSkeleton /></div></main>;
+  return (
+    <main className="min-h-[calc(100dvh-4.5rem)] max-w-none bg-canvas p-0 pb-10">
+      <SkeletonStatus label="Carregando links…">
+        <PublicPageCoverSkeleton />
+        <div className={linksSectionLayout}><LinksGridPlaceholder /></div>
+      </SkeletonStatus>
+    </main>
+  );
 }

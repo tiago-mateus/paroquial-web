@@ -8,13 +8,15 @@ import { usePublicTenant } from "../../shared/hooks/usePublicTenant";
 import { usePublicChurches } from "../../shared/hooks/usePublicChurches";
 import { toDateKey } from "../../shared/lib/date";
 import { resolveParishCover } from "../../shared/lib/parishCover";
-import { EventListSkeleton } from "../events/EventListSkeleton";
+import { EventListPlaceholder, EventListSkeleton } from "../events/EventListSkeleton";
 import { SectionHeading } from "../../shared/components/SectionHeading";
 import { getBrazilianWhatsappHref } from "../../shared/lib/phone";
-import { ErrorState, LoadingState } from "../../shared/components/PageState";
+import { ErrorState } from "../../shared/components/PageState";
+import { PublicPageCoverSkeleton } from "../../shared/components/PublicPageCover";
+import { SkeletonShape, SkeletonStatus } from "../../shared/components/PublicSkeleton";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { getEventsForDate } from "../calendar/calendar.utils";
-import { HomeHighlights } from "./HomeHighlights";
+import { HighlightSkeletonCard, HomeHighlights } from "./HomeHighlights";
 import { HomeHeader } from "./HomeHeader";
 import { TodayEventsList } from "./TodayEventsList";
 
@@ -42,7 +44,7 @@ export function PublicHomePage() {
   });
   useDocumentTitle("Início", tenantQuery.data?.name);
 
-  if (tenantQuery.isLoading) return <HomeSkeleton title="Preparando a sua paróquia..." />;
+  if (tenantQuery.isLoading) return <HomeSkeleton />;
 
   if (tenantQuery.isError || !tenantQuery.data) {
     return (
@@ -85,12 +87,12 @@ export function PublicHomePage() {
             <div className="grid min-w-0 gap-3">
               <HomeHighlights
                 banners={bannersQuery.data ?? []}
+                bannersLoading={bannersQuery.isLoading}
                 reading={liturgyQuery.data}
                 readingStatus={liturgyQuery.isLoading ? "loading" : liturgyQuery.isError ? "error" : "ready"}
                 includeLiturgy
                 action={todayEvents.length > 0 ? <a href="#today-agenda-title" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold text-primary hover:bg-selection focus-visible:outline-2 focus-visible:outline-focus"><CalendarDays size={15} aria-hidden="true" />{todayEvents.length} {todayEvents.length === 1 ? "evento hoje" : "eventos hoje"}<ArrowDown size={14} aria-hidden="true" /></a> : undefined}
               />
-              {bannersQuery.isLoading ? <p role="status" className="m-0 text-sm text-muted">Carregando avisos da comunidade...</p> : null}
               {bannersQuery.isError ? <div><p className="m-0 text-base text-muted">Não foi possível carregar os avisos da comunidade.</p><button type="button" onClick={() => void bannersQuery.refetch()} className="mt-1 min-h-11 rounded-lg text-sm font-semibold text-primary">Tentar novamente</button></div> : null}
             </div>
             <section className="grid min-w-0 gap-3 sm:gap-4" aria-labelledby="today-agenda-title">
@@ -109,7 +111,7 @@ export function PublicHomePage() {
               } />
 
               {eventsQuery.isLoading ? (
-                <EventListSkeleton count={2} label="Carregando agenda..." />
+                <EventListSkeleton count={2} label="Carregando agenda…" variant="home" />
               ) : eventsQuery.isError ? (
                 <ErrorState title="Não foi possível carregar a agenda" description="Tente novamente em instantes." />
               ) : (
@@ -123,15 +125,25 @@ export function PublicHomePage() {
   );
 }
 
-function HomeSkeleton({ title }: { title: string }) {
+function HomeSkeleton() {
   return (
     <main className="min-h-dvh max-w-none bg-canvas p-0 text-ink">
-      <div className="mx-auto h-32 max-w-6xl animate-pulse bg-selection motion-reduce:animate-none sm:mt-6 sm:h-60 sm:rounded-2xl lg:h-72" />
-      <section className="mx-auto max-w-6xl px-5 sm:px-6">
-        <div className="min-h-[28rem] bg-surface pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-7">
-          <LoadingState title={title} />
+      <SkeletonStatus label="Preparando a sua paróquia…">
+        <PublicPageCoverSkeleton variant="home" />
+        <div className="mx-auto grid max-w-6xl gap-4 px-5 pb-12 pt-5 sm:gap-8 sm:px-6 sm:pt-8">
+          <div className="grid gap-3">
+            <SkeletonShape className="h-7 w-32 rounded-md sm:h-8" />
+            <div className="flex min-w-0 gap-3 overflow-hidden">
+              <div className="flex basis-[92%] shrink-0 sm:basis-3/4 lg:basis-3/5"><HighlightSkeletonCard /></div>
+              <div className="flex basis-[92%] shrink-0 sm:basis-3/4 lg:basis-3/5"><HighlightSkeletonCard /></div>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <SkeletonShape className="h-7 w-40 rounded-md sm:h-8" />
+            <EventListPlaceholder count={2} variant="home" />
+          </div>
         </div>
-      </section>
+      </SkeletonStatus>
     </main>
   );
 }

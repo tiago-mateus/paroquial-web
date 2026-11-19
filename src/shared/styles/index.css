@@ -83,6 +83,10 @@
     @apply m-0;
   }
 
+  #root:empty {
+    @apply min-h-dvh bg-neutral-50;
+  }
+
   a {
     @apply text-inherit no-underline;
   }

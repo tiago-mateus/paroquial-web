@@ -11,6 +11,7 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 type Props = {
   location: ChurchLocation;
   center: ChurchLocation;
+  centerZoom?: number;
   /** Muda quando o mapa deve centralizar e aproximar no local (busca ou GPS). */
   focusKey: number;
   /**
@@ -21,10 +22,10 @@ type Props = {
   /** false: prévia estática, sem gestos (usada no celular dentro do formulário). */
   interactive?: boolean;
   onPick?: (location: ChurchLocation, source: LocationSource) => void;
-  onCenterChange?: (location: ChurchLocation) => void;
+  onCenterChange?: (location: ChurchLocation, explicit?: boolean) => void;
 };
 
-export default function ChurchLocationPickerMap({ location, center, focusKey, mode = "pin", interactive = true, onPick, onCenterChange }: Props) {
+export default function ChurchLocationPickerMap({ location, center, centerZoom = 13, focusKey, mode = "pin", interactive = true, onPick, onCenterChange }: Props) {
   const hasLocation = location.latitude !== 0 || location.longitude !== 0;
   const initial = hasLocation ? location : center;
   const icon = useMemo(() => divIcon({ className: "church-map-div-icon", html: pinHtml, iconSize: [pinSize, pinHeight], iconAnchor: [pinSize / 2, pinHeight - 1] }), []);
@@ -33,7 +34,7 @@ export default function ChurchLocationPickerMap({ location, center, focusKey, mo
     <div className="churches-map h-full w-full">
       <MapContainer
         center={[initial.latitude, initial.longitude]}
-        zoom={hasLocation ? 17 : 13}
+        zoom={hasLocation ? 17 : centerZoom}
         maxZoom={19}
         className="h-full w-full"
         scrollWheelZoom={mode === "center" ? "center" : false}
@@ -82,19 +83,21 @@ function MapClicks({ onPick }: { onPick: (location: ChurchLocation, source: Loca
   return null;
 }
 
-function ReportCenter({ onCenterChange }: { onCenterChange?: (location: ChurchLocation) => void }) {
+function ReportCenter({ onCenterChange }: { onCenterChange?: Props["onCenterChange"] }) {
+  const map = useMap();
   const callback = useRef(onCenterChange);
   callback.current = onCenterChange;
-  const map = useMapEvents({
+  useMapEvents({
     moveend() {
-      const { lat, lng } = map.getCenter();
+      const { lat, lng } = map.wrapLatLng(map.getCenter());
       callback.current?.({ latitude: lat, longitude: lng });
     },
+    click(event) {
+      const point = map.wrapLatLng(event.latlng);
+      callback.current?.({ latitude: point.lat, longitude: point.lng }, true);
+      map.setView(point, map.getZoom(), { animate: false });
+    },
   });
-  useEffect(() => {
-    const { lat, lng } = map.getCenter();
-    callback.current?.({ latitude: lat, longitude: lng });
-  }, [map]);
   return null;
 }
 
@@ -117,7 +120,8 @@ function FocusOnLocation({ location, focusKey }: { location: ChurchLocation; foc
     if (lastKey.current === focusKey) return;
     lastKey.current = focusKey;
     if (location.latitude === 0 && location.longitude === 0) return;
-    map.setView([location.latitude, location.longitude], Math.max(map.getZoom(), 17), { animate: !reducedMotion() });
+    map.stop();
+    map.setView([location.latitude, location.longitude], Math.max(map.getZoom(), 17), { animate: false });
   }, [focusKey, location, map]);
   return null;
 }

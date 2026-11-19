@@ -65,7 +65,7 @@ export function PublicCalendarPage() {
           <PublicDatePicker tenantSlug={tenantSlug} selectedDate={selectedDate} displayedDate={displayedDate} onSelectDate={selectDate} onNavigateDate={(date) => setCalendarCursor({ selectedKey: toDateKey(selectedDate), date })} />
         </section>
 
-        <section className="grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1" aria-labelledby="selected-date-title" aria-busy={eventsQuery.isFetching}>
+        <section className="grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1" aria-labelledby="selected-date-title">
           <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-5">
             <div>
               <h2 id="selected-date-title" className="m-0 font-display text-2xl font-medium leading-tight text-ink sm:text-3xl">{formatSelectedDate(selectedDate)}</h2>
@@ -73,6 +73,7 @@ export function PublicCalendarPage() {
             </div>
             {eventsQuery.isFetching && !eventsQuery.isLoading ? <span role="status" className="text-[13px] text-muted">Atualizando…</span> : null}
           </header>
+          <div aria-busy={eventsQuery.isFetching && !eventsQuery.isLoading}>
             {eventsQuery.isLoading ? (
               <EventListSkeleton />
             ) : eventsQuery.isError ? (
@@ -88,6 +89,7 @@ export function PublicCalendarPage() {
             ) : (
               <AgendaDayTimeline events={selectedEvents} onSelect={setSelectedEvent} />
             )}
+          </div>
         </section>
       </div>
 

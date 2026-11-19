@@ -5,11 +5,13 @@ import type { LiturgicalReading } from "../../shared/api/liturgy";
 import { HighlightContent } from "./HighlightContent";
 import { IconButton } from "../../shared/components/IconButton";
 import { SectionHeading } from "../../shared/components/SectionHeading";
+import { SkeletonShape } from "../../shared/components/PublicSkeleton";
 
 const ROTATION_INTERVAL = 6000;
 
-export function HomeHighlights({ banners, reading, readingStatus = "ready", includeLiturgy = false, titleId = "home-highlights-title", action }: {
+export function HomeHighlights({ banners, bannersLoading = false, reading, readingStatus = "ready", includeLiturgy = false, titleId = "home-highlights-title", action }: {
   banners: PublicHomeBanner[];
+  bannersLoading?: boolean;
   reading?: LiturgicalReading;
   readingStatus?: "loading" | "error" | "ready";
   includeLiturgy?: boolean;
@@ -48,7 +50,9 @@ export function HomeHighlights({ banners, reading, readingStatus = "ready", incl
     return () => window.clearInterval(timer);
   }, [activeIndex, goToSlide, hovered, paused, slides.length]);
 
-  if (!slides.length) return null;
+  if (!slides.length && !bannersLoading) return null;
+  const hasAdjacentSlide = slides.length > 1 || (slides.length > 0 && bannersLoading);
+  const slideLayout = `flex min-h-40 min-w-0 shrink-0 snap-start snap-always flex-col overflow-hidden rounded-2xl ${hasAdjacentSlide ? "basis-[92%] sm:basis-3/4 lg:basis-3/5" : "basis-full"}`;
 
   const selectSlide = (index: number) => {
     setPaused(true);
@@ -67,6 +71,7 @@ export function HomeHighlights({ banners, reading, readingStatus = "ready", incl
       }}
     >
       <SectionHeading id={titleId} title="Destaques" className="mb-3 flex-wrap items-center gap-y-1" action={action} />
+      {bannersLoading ? <span className="sr-only" role="status">Carregando avisos da comunidade…</span> : null}
       <div
         ref={trackRef}
         aria-live={paused ? "polite" : "off"}
@@ -74,7 +79,8 @@ export function HomeHighlights({ banners, reading, readingStatus = "ready", incl
         onPointerDown={() => setPaused(true)}
         onScroll={(event) => {
           const track = event.currentTarget;
-          const items = Array.from(track.children) as HTMLElement[];
+          const items = Array.from(track.children).slice(0, slides.length) as HTMLElement[];
+          if (!items.length) return;
           const left = track.getBoundingClientRect().left;
           const nearest = items.reduce((closest, slide, index) => Math.abs(slide.getBoundingClientRect().left - left) < Math.abs(items[closest].getBoundingClientRect().left - left) ? index : closest, 0);
           setCurrentIndex(nearest);
@@ -87,11 +93,12 @@ export function HomeHighlights({ banners, reading, readingStatus = "ready", incl
             aria-roledescription="slide"
             aria-label={`${index + 1} de ${slides.length}: ${slide.titulo}`}
             onFocusCapture={() => goToSlide(index, true)}
-            className={`flex min-h-40 min-w-0 shrink-0 snap-start snap-always flex-col overflow-hidden rounded-2xl bg-surface ${slides.length > 1 ? "basis-[92%] sm:basis-3/4 lg:basis-3/5" : "basis-full"}`}
+            className={`${slideLayout} bg-surface`}
           >
             {slide.content}
           </article>
         ))}
+        {bannersLoading ? <div aria-hidden="true" className={slideLayout}><HighlightSkeletonCard /></div> : null}
       </div>
       {slides.length > 1 ? (
         <div className="flex min-h-12 items-center justify-between gap-1">
@@ -112,6 +119,16 @@ export function HomeHighlights({ banners, reading, readingStatus = "ready", incl
         </div>
       ) : null}
     </section>
+  );
+}
+
+export function HighlightSkeletonCard() {
+  return (
+    <div className="flex min-h-40 flex-1 flex-col justify-end gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+      <SkeletonShape className="h-6 w-2/3 max-w-60 rounded-md" />
+      <SkeletonShape className="h-3.5 w-4/5 max-w-80 rounded" />
+      <SkeletonShape className="mb-2 h-3.5 w-2/5 max-w-36 rounded" />
+    </div>
   );
 }
 

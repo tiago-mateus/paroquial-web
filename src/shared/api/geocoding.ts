@@ -32,26 +32,42 @@ type NominatimResult = {
   address?: NominatimAddress;
 };
 
-let lastRequestAt = 0;
+let nextRequestAt = 0;
+const cache = new Map<string, { value: unknown; expires: number }>();
 
 /** Garante o intervalo mínimo entre chamadas ao serviço público. */
 async function throttle(signal?: AbortSignal) {
-  const wait = lastRequestAt + 1000 - Date.now();
+  signal?.throwIfAborted();
+  const now = Date.now();
+  const slot = Math.max(now, nextRequestAt);
+  nextRequestAt = slot + 1_000;
+  const wait = slot - now;
   if (wait > 0) {
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(resolve, wait);
-      signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("Aborted", "AbortError")); }, { once: true });
+      const timer = setTimeout(() => {
+        signal?.removeEventListener("abort", cancel);
+        resolve();
+      }, wait);
+      function cancel() { clearTimeout(timer); reject(signal?.reason); }
+      signal?.addEventListener("abort", cancel, { once: true });
     });
   }
-  lastRequestAt = Date.now();
 }
 
 async function request<T>(path: string, params: Record<string, string>, signal?: AbortSignal): Promise<T> {
-  await throttle(signal);
   const query = new URLSearchParams({ format: "jsonv2", addressdetails: "1", "accept-language": "pt-BR", ...params });
-  const response = await fetch(`${geocodingUrl}${path}?${query}`, { signal, headers: { Accept: "application/json" } });
+  const url = `${geocodingUrl}${path}?${query}`;
+  signal?.throwIfAborted();
+  const cached = cache.get(url);
+  if (cached && cached.expires > Date.now()) return cached.value as T;
+  await throttle(signal);
+  const timeout = AbortSignal.timeout(8_000);
+  const response = await fetch(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout, headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`Geocoding failed with status ${response.status}`);
-  return (await response.json()) as T;
+  const value: T = await response.json();
+  if (cache.size >= 100) cache.delete(cache.keys().next().value!);
+  cache.set(url, { value, expires: Date.now() + 5 * 60_000 });
+  return value;
 }
 
 export async function searchPlaces(text: string, options: { near?: { latitude: number; longitude: number }; signal?: AbortSignal } = {}) {

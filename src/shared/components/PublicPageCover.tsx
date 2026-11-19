@@ -1,9 +1,10 @@
-import { Church, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import type { HomeHeaderConfig } from "../api/tenants";
 import { classNames } from "../lib/classNames";
 import { resolveParishCover } from "../lib/parishCover";
 import { CoverImage } from "./CoverImage";
+import { SkeletonShape } from "./PublicSkeleton";
 
 type PublicPageCoverProps = {
   title: ReactNode;
@@ -45,5 +46,35 @@ export function PublicPageCover({ title, titleId, description, cityLabel, header
         </div>
       </div>
     </header>
+  );
+}
+
+export function PublicPageCoverSkeleton({ variant = "page" }: { variant?: "home" | "page" }) {
+  const home = variant === "home";
+  return (
+    <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
+      <div className={classNames(
+        "flex flex-col justify-end rounded-2xl bg-neutral-100 p-5 sm:p-8 lg:p-10",
+        home ? "min-h-68 sm:min-h-80" : "min-h-40 sm:min-h-64",
+      )}>
+        <SkeletonShape className="h-7 w-3/4 max-w-md rounded-md sm:h-10" />
+        <SkeletonShape className="mt-3 h-4 w-1/2 max-w-48 rounded" />
+        {home ? (
+          <div className="mt-5 grid max-w-xl grid-cols-2 gap-3">
+            {[0, 1].map(item => (
+              <div key={item} className="flex min-h-16 items-center gap-2 rounded-xl border border-neutral-200 px-3">
+                <SkeletonShape className="size-7 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <SkeletonShape className="h-3 w-4/5 max-w-24 rounded" />
+                  <SkeletonShape className="h-2.5 w-3/5 max-w-20 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <SkeletonShape className="mt-3 h-3.5 w-24 rounded" />
+        )}
+      </div>
+    </div>
   );
 }

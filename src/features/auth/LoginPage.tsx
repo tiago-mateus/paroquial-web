@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Church, Eye, EyeOff, LoaderCircle } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { login, type LoginSession } from './auth.api';
 import { useQueryClient } from '@tanstack/react-query';
-import { launchMode } from '../../shared/launchMode';
+import { launchMode, localAdminAccess } from '../../shared/launchMode';
 import { buttonClasses } from '../../shared/styles/controls';
 
 export function LoginPage() {
@@ -28,6 +28,12 @@ export function LoginPage() {
     return () => { document.title = previous; };
   }, []);
   useLayoutEffect(() => { if (session) chooserRef.current?.focus(); }, [session]);
+
+  if (localAdminAccess) {
+    const tenant = params.get('tenant') ?? '';
+    const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tenant) ? tenant : 'sao-jose';
+    return <Navigate to={`/${slug}/admin`} replace />;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

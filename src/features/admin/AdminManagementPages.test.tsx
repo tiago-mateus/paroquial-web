@@ -197,15 +197,21 @@ describe("áreas administrativas públicas", () => {
     }));
     renderPage(<AdminChurchesPage />, "/sao-jose/admin/paroquia/igrejas?action=new", "paroquia/igrejas");
     const search = await screen.findByLabelText("Buscar localização");
-    expect(screen.getByText("Local ainda não marcado")).toBeInTheDocument();
+    expect(screen.getByText(/Nenhum local selecionado/)).toBeInTheDocument();
     fireEvent.change(search, { target: { value: "Catedral Campinas" } });
     fireEvent.keyDown(search, { key: "Enter" });
     expect(screen.getByRole("dialog", { name: "Nova igreja" })).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: /Catedral Metropolitana/ }, { timeout: 3_000 }));
     expect(searched?.searchParams.get("q")).toBe("Catedral Campinas");
     expect(searched?.searchParams.get("countrycodes")).toBe("br");
+    const map = screen.getByRole("dialog", { name: "Marcar local da igreja" });
+    expect(within(map).getByLabelText("Buscar localização")).toHaveValue("Catedral Campinas");
+    expect(within(map).getByText("Praça José Bonifácio, 100 - Centro, Campinas - SP")).toBeInTheDocument();
+    fireEvent.click(within(map).getByRole("button", { name: "Voltar ao formulário sem alterar" }));
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Retomar marcação no mapa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar local" }));
     expect(screen.getByText("Local marcado no mapa")).toBeInTheDocument();
-    expect(screen.getByText("-22.905600, -47.060800")).toBeInTheDocument();
     expect(screen.getByLabelText("Endereço exibido no site")).toHaveValue("Praça José Bonifácio, 100 - Centro, Campinas - SP");
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Catedral" } });
@@ -230,9 +236,8 @@ describe("áreas administrativas públicas", () => {
     expect(screen.queryByRole("dialog", { name: "Marcar local da igreja" })).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Nova igreja" })).toBeInTheDocument();
     expect(screen.getByText("Local marcado no mapa")).toBeInTheDocument();
-    expect(screen.getByText("-22.900000, -47.060000")).toBeInTheDocument();
     expect(screen.getByLabelText("Endereço exibido no site")).toHaveValue("Rua das Flores, 10, Campinas - SP");
-    expect(screen.getByRole("button", { name: "Ajustar no mapa" })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Ajustar no mapa" })).toHaveFocus());
   });
 
   it("cancela o mapa ampliado com Escape sem fechar o formulário", async () => {
@@ -241,7 +246,7 @@ describe("áreas administrativas públicas", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Marcar local da igreja" })).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Nova igreja" })).toBeInTheDocument();
-    expect(screen.getByText("Local ainda não marcado")).toBeInTheDocument();
+    expect(screen.getByText(/Nenhum local selecionado/)).toBeInTheDocument();
   });
 
   it("explica quando a busca de localização não encontra nada", async () => {
@@ -249,8 +254,8 @@ describe("áreas administrativas públicas", () => {
     renderPage(<AdminChurchesPage />, "/sao-jose/admin/paroquia/igrejas?action=new", "paroquia/igrejas");
     const search = await screen.findByLabelText("Buscar localização");
     fireEvent.change(search, { target: { value: "lugar inexistente" } });
-    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
-    expect(await screen.findByText(/Nenhum lugar encontrado/, {}, { timeout: 3_000 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Buscar endereço" }));
+    expect(await screen.findByText(/Não encontramos esse endereço/, {}, { timeout: 3_000 })).toBeInTheDocument();
   });
 
   it("abre publicação de destaque pelo atalho", async () => {

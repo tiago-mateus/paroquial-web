@@ -16,13 +16,14 @@ type AdminFormDialogProps = {
   wide?: boolean;
   contentKey?: string;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onDelete?: () => void;
 };
 
-export function AdminFormDialog({ open, eyebrow, title, submitLabel, pending = false, dirty = false, submitDisabled = false, submitHint, wide = false, contentKey, initialFocusRef, children, onClose, onSubmit, onDelete }: AdminFormDialogProps) {
+export function AdminFormDialog({ open, eyebrow, title, submitLabel, pending = false, dirty = false, submitDisabled = false, submitHint, wide = false, contentKey, initialFocusRef, returnFocusRef, children, onClose, onSubmit, onDelete }: AdminFormDialogProps) {
   const titleId = useId();
   const [discardOpen, setDiscardOpen] = useState(false);
   const requestClose = () => {
@@ -38,7 +39,7 @@ export function AdminFormDialog({ open, eyebrow, title, submitLabel, pending = f
 
   useEffect(() => {
     if (!open) return;
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousFocusRef.current = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     (initialFocusRef?.current ?? closeRef.current)?.focus();
@@ -50,7 +51,8 @@ export function AdminFormDialog({ open, eyebrow, title, submitLabel, pending = f
         return;
       }
       if (event.key !== "Tab") return;
-      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:enabled, input:enabled, select:enabled, textarea:enabled, a[href], summary') ?? []).filter(element => element.matches('summary') || !element.closest('details:not([open])'));
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:enabled, input:enabled, select:enabled, textarea:enabled, a[href], summary') ?? []).filter(element =>
+        !element.closest('[hidden]') && (element.matches('summary') || !element.closest('details:not([open])')));
       if (!focusable?.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -64,7 +66,7 @@ export function AdminFormDialog({ open, eyebrow, title, submitLabel, pending = f
       previousFocusRef.current?.focus();
       previousFocusRef.current = null;
     };
-  }, [open, initialFocusRef]);
+  }, [open, initialFocusRef, returnFocusRef]);
 
   if (!open) return null;
 

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useLayoutEffect } from "react";
 import { launchMode } from "../launchMode";
 import { defaultTheme, parseTheme, themeTokens, type ParishTheme } from "./palette";
@@ -7,6 +7,7 @@ export type StoredTheme = { storage: "browser" | "shared"; theme: ParishTheme };
 const key = (tenant: string) => "paroquial-theme:" + tenant;
 const endpoint = (tenant: string) => "/api/parish-theme?tenant=" + encodeURIComponent(tenant);
 export const themeQueryKey = (tenant: string) => ["parish-theme", tenant];
+const pendingTheme: ParishTheme = { primary: "#525252", accent: "#E5E5E5", canvas: "#FAFAFA" };
 
 function browserTheme(tenant: string): ParishTheme {
   try {
@@ -18,7 +19,7 @@ function browserTheme(tenant: string): ParishTheme {
 
 async function readTheme(tenant: string): Promise<StoredTheme> {
   if (!launchMode) return { storage: "browser", theme: browserTheme(tenant) };
-  const response = await fetch(endpoint(tenant));
+  const response = await fetch(endpoint(tenant), { signal: AbortSignal.timeout(5_000) });
   if (!response.ok) throw new Error("Não foi possível carregar o tema.");
   const data = await response.json();
   if (data.storage === "shared") return { storage: "shared", theme: parseTheme(data.theme) ?? defaultTheme };
@@ -26,8 +27,14 @@ async function readTheme(tenant: string): Promise<StoredTheme> {
   throw new Error("Não foi possível identificar onde o tema é salvo.");
 }
 
+export function parishThemeOptions(tenant: string) {
+  return queryOptions({ queryKey: themeQueryKey(tenant), queryFn: () => readTheme(tenant), enabled: Boolean(tenant),
+    initialData: !launchMode && tenant ? () => ({ storage: "browser" as const, theme: browserTheme(tenant) }) : undefined,
+    staleTime: 30_000, retry: false });
+}
+
 export function useParishTheme(tenant: string) {
-  return useQuery({ queryKey: themeQueryKey(tenant), queryFn: () => readTheme(tenant), enabled: Boolean(tenant), staleTime: 30_000, retry: false });
+  return useQuery(parishThemeOptions(tenant));
 }
 
 export async function saveParishTheme(tenant: string, storage: StoredTheme["storage"], theme: ParishTheme): Promise<StoredTheme> {
@@ -41,12 +48,12 @@ export async function saveParishTheme(tenant: string, storage: StoredTheme["stor
 }
 
 export function useApplyParishTheme(tenant: string) {
-  const theme = useParishTheme(tenant).data?.theme;
+  const query = useParishTheme(tenant);
+  const theme = query.data?.theme ?? (query.isPending && tenant ? pendingTheme : defaultTheme);
   useLayoutEffect(() => {
-    if (!theme) return;
     const style = document.documentElement.style;
     const tokens = themeTokens(theme);
     for (const [name, value] of Object.entries(tokens)) style.setProperty(name, value);
     return () => { for (const name of Object.keys(tokens)) style.removeProperty(name); };
-  }, [theme]);
+  }, [tenant, theme]);
 }

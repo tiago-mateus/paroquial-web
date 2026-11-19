@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { logoutLaunch } from '../auth/auth.api';
-import { launchMode } from '../../shared/launchMode';
+import { launchMode, localAdminAccess } from '../../shared/launchMode';
 import { Outlet, useParams } from 'react-router-dom';
 import { AppToaster } from '../../shared/components/AppToaster';
 import { BottomNavigation } from '../../shared/components/BottomNavigation';
@@ -16,7 +16,7 @@ export function AdminLayout() {
   return <>
     <div className="admin-workspace min-h-dvh min-w-0 bg-canvas text-ink lg:pl-[var(--admin-sidebar-width)]">
       <AdminDesktopNavigation />
-      {launchMode ? <LaunchAdminNotice /> : <SubscriptionBanner />}
+      {localAdminAccess ? null : launchMode ? <LaunchAdminNotice /> : <SubscriptionBanner />}
       <main id="admin-main" tabIndex={-1} className="@container/admin m-0 min-w-0 max-w-none p-0 pb-[var(--admin-nav-offset)] focus:outline-none"><Outlet /></main>
       <div className="lg:hidden"><BottomNavigation variant="public" label="Navegação principal" items={adminNavigation.map(({label,path,icon}) => ({label,icon,href:path ? `${base}/${path}` : base,end:!path}))} /></div>
     </div>

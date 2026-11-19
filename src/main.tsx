@@ -2,11 +2,20 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { AppProviders } from "./app/providers";
+import { queryClient } from "./app/queryClient";
+import { parishThemeOptions } from "./shared/theme/parishTheme";
 import { router } from "./app/router";
 import "./shared/styles/index.css";
-import { demoMode, launchMode } from "./shared/launchMode";
+import { demoMode, launchMode, localAdminAccess } from "./shared/launchMode";
+
+const publicMatch = router.state.matches.find(match => match.route.id === "public-parish");
+const publicTenant = publicMatch?.params.tenantSlug;
+if (launchMode && publicTenant) {
+  void queryClient.prefetchQuery(parishThemeOptions(publicTenant));
+}
 
 async function enableMocks() {
+  if (localAdminAccess && launchMode) return;
   if (!launchMode && !demoMode) {
     return;
   }

@@ -2,8 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigate, useParams } from "react-router-dom";
 import type { ReactNode } from "react";
 import { getSession } from "./auth.api";
+import { localAdminAccess } from "../../shared/launchMode";
 
 export function RequireAdmin({ children }: { children: ReactNode }) {
+  return localAdminAccess ? children : <RequireSession>{children}</RequireSession>;
+}
+
+function RequireSession({ children }: { children: ReactNode }) {
   const { tenantSlug = "" } = useParams();
   const query = useQuery({ queryKey: ["session"], queryFn: getSession, retry: false, staleTime: 0 });
   if (query.isPending || query.isFetching) return <p className="p-6" role="status">Verificando seu acesso…</p>;

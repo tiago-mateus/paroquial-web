@@ -1,6 +1,6 @@
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
-import { ArrowLeft, Check, CheckCircle2, LoaderCircle, LocateFixed, MapPin, Maximize2, MousePointerClick, Move, Search, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { ArrowLeft, Check, CheckCircle2, LoaderCircle, LocateFixed, MapPin, Search, X } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { reversePlace, searchPlaces, type GeocodedPlace } from "../../shared/api/geocoding";
 import { classNames } from "../../shared/lib/classNames";
@@ -20,47 +20,41 @@ const validLocation = ({ latitude, longitude }: ChurchLocation) =>
 const mapFrameClass = "relative isolate overflow-hidden rounded-xl border border-line bg-canvas";
 const isTest = import.meta.env.MODE === "test";
 
-function useMediaQuery(query: string) {
-  const subscribe = useCallback((update: () => void) => {
-    const media = window.matchMedia(query);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, [query]);
-  return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches, () => false);
-}
-
 function currentPosition() {
-  return new Promise<ChurchLocation>((resolve, reject) => {
+  return new Promise<ChurchLocation & { accuracy: number }>((resolve, reject) => {
+    if (!window.isSecureContext) { reject("A localização do dispositivo exige uma conexão segura. Use a busca ou marque no mapa."); return; }
     if (!("geolocation" in navigator)) { reject("Este navegador não informa a localização. Busque o endereço ou marque no mapa."); return; }
     navigator.geolocation.getCurrentPosition(
-      (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+      (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy }),
       (error) => reject(error.code === error.PERMISSION_DENIED
         ? "A permissão de localização foi negada. Busque o endereço ou marque no mapa."
-        : "Não foi possível obter sua localização. Busque o endereço ou marque no mapa."),
+        : error.code === error.TIMEOUT ? "A localização demorou demais. Tente novamente ou marque no mapa." : "Não foi possível obter sua localização. Busque o endereço ou marque no mapa."),
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
     );
   });
 }
 const overlayButtonClass = "inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-ink shadow-[0_4px_14px_rgb(15_23_42/0.18)] transition-colors hover:bg-selection focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70";
 
-export function ChurchLocationPicker({ location, center, searchNear, address, onLocationChange, onAddressChange }: {
+export function ChurchLocationPicker({ location, center, centerZoom, searchNear, address, active = true, onLocationChange, onAddressChange }: {
   location: ChurchLocation;
   center: ChurchLocation;
+  centerZoom?: number;
   /** Centro usado para priorizar resultados próximos na busca, quando conhecido. */
   searchNear?: ChurchLocation;
   address: string;
+  active?: boolean;
   onLocationChange: (location: ChurchLocation) => void;
   onAddressChange: (address: string) => void;
 }) {
   const [googleFailed, setGoogleFailed] = useState(false);
   const [selectionError, setSelectionError] = useState("");
-  const [focusKey, setFocusKey] = useState(0);
+  const [mapDraft, setMapDraft] = useState<MapDraft>();
+  const search = useLocationSearch(searchNear);
   const [suggestion, setSuggestion] = useState<{ address: string; status: "loading" | "ready" } | null>(null);
   const [autoFilled, setAutoFilled] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading">("idle");
   const [expanded, setExpanded] = useState(false);
   const openButtonRef = useRef<HTMLButtonElement>(null);
-  const desktop = useMediaQuery("(min-width: 768px)");
   const reverseTimer = useRef<number | undefined>(undefined);
   const reverseAbort = useRef<AbortController | null>(null);
   const addressRef = useRef(address);
@@ -97,127 +91,76 @@ export function ChurchLocationPicker({ location, center, searchNear, address, on
     }, 700);
   }
 
-  function pick(next: ChurchLocation, source: LocationSource) {
-    setSelectionError("");
-    onLocationChange(next);
-    if (source !== "map") setFocusKey((key) => key + 1);
-    if (source !== "search") suggestAddressFor(next);
-  }
-
   function selectSearchResult(place: GeocodedPlace) {
-    pick({ latitude: place.latitude, longitude: place.longitude }, "search");
-    if (!address.trim()) {
-      onAddressChange(place.address);
-      setAutoFilled(true);
-      setSuggestion(null);
-    } else if (place.address !== address.trim()) {
-      setSuggestion({ address: place.address, status: "ready" });
-    }
+    setMapDraft({ point: place, address: place.address });
+    setExpanded(true);
   }
 
   function locateMe() {
     setGpsStatus("loading");
     void currentPosition().then(
-      (next) => { setGpsStatus("idle"); pick(next, "gps"); },
+      (next) => { setGpsStatus("idle"); setMapDraft({ point: next, accuracy: next.accuracy }); setExpanded(true); },
       (message: string) => { setGpsStatus("idle"); setSelectionError(message); },
     );
   }
 
   /** Volta do mapa ampliado com o ponto confirmado. */
-  function confirmFromExpanded(next: ChurchLocation, pointAddress?: string) {
+  function confirmFromExpanded(next: ChurchLocation, pointAddress?: string, lookUpMissing = false) {
     setExpanded(false);
     setSelectionError("");
     onLocationChange(next);
-    setFocusKey((key) => key + 1);
+    setMapDraft(undefined);
     window.clearTimeout(reverseTimer.current);
     reverseAbort.current?.abort();
-    if (!pointAddress) { suggestAddressFor(next); return; }
+    if (!pointAddress) {
+      if (lookUpMissing) suggestAddressFor(next);
+      else setSuggestion(null);
+      return;
+    }
     if (!address.trim()) { onAddressChange(pointAddress); setAutoFilled(true); setSuggestion(null); }
     else if (pointAddress !== address.trim()) setSuggestion({ address: pointAddress, status: "ready" });
     else setSuggestion(null);
   }
 
-  const openLabel = hasLocation ? "Ajustar no mapa" : "Marcar no mapa";
+  const openLabel = hasLocation ? "Ajustar no mapa" : mapDraft ? "Retomar marcação no mapa" : "Marcar no mapa";
+  if (!active) return null;
 
   return (
     <section aria-labelledby="church-location-title" className="sm:col-span-2">
-      <div className="mb-3">
-        <h3 id="church-location-title" className="m-0 flex items-center gap-2 text-base font-semibold text-ink"><MapPin size={18} className="text-primary" aria-hidden="true" />Onde fica a igreja?</h3>
-        <p className="m-0 mt-1 text-sm leading-5 text-muted">
-          {useGoogle
-            ? "Busque pelo nome ou endereço e confira o pino no mapa."
-            : desktop
-              ? "Busque pelo nome ou endereço. Depois, confira o pino no mapa e arraste se precisar."
-              : "Busque pelo nome ou endereço, ou abra o mapa para marcar o ponto exato."}
-        </p>
-      </div>
-
-      {useGoogle ? (
-        <GoogleLocationMap location={location} center={center} onLocationChange={onLocationChange} onAddressChange={onAddressChange} onError={(message) => { setGoogleFailed(true); setSelectionError(message); }} onSelectionError={setSelectionError} />
-      ) : (
-        <>
-          <LocationSearch near={searchNear} onSelect={selectSearchResult} />
-          <div className={classNames(mapFrameClass, "mt-3", desktop ? "h-80" : "h-44")} aria-label="Mapa para marcar localização">
-            {isTest
-              ? <div className="h-full w-full" />
-              : <Suspense fallback={<div className="h-full w-full animate-pulse bg-canvas" />}><FallbackMap location={location} center={center} focusKey={focusKey} interactive={desktop} onPick={pick} /></Suspense>}
-
-            {desktop ? (
-              <>
-                {!hasLocation ? (
-                  <p className="pointer-events-none absolute inset-x-3 top-3 z-[1000] m-0 flex justify-center">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-ink/85 px-3 py-1.5 text-xs font-semibold text-white shadow">
-                      <MousePointerClick size={14} aria-hidden="true" />Clique no mapa onde fica a igreja
-                    </span>
-                  </p>
-                ) : null}
-                <div className="absolute right-3 top-3 z-[1000]">
-                  <button ref={openButtonRef} type="button" onClick={() => setExpanded(true)} className={overlayButtonClass}>
-                    <Maximize2 size={16} className="text-primary" aria-hidden="true" />Ampliar mapa
-                  </button>
-                </div>
-                <div className="absolute bottom-3 left-3 z-[1000]">
-                  <button type="button" onClick={locateMe} disabled={gpsStatus === "loading"} className={overlayButtonClass}>
-                    {gpsStatus === "loading" ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LocateFixed size={16} className="text-primary" aria-hidden="true" />}
-                    {gpsStatus === "loading" ? "Localizando…" : "Estou na igreja"}
-                  </button>
-                </div>
-              </>
-            ) : (
-              // No celular a prévia não captura gestos: todo o mapa abre a marcação em tela cheia.
-              <button ref={openButtonRef} type="button" onClick={() => setExpanded(true)} className="absolute inset-0 z-[1000] flex items-end justify-center bg-gradient-to-t from-ink/35 via-transparent to-transparent p-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary">
-                <span className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-4 text-[15px] font-semibold text-primary shadow-[0_4px_14px_rgb(15_23_42/0.22)]">
-                  <Maximize2 size={17} aria-hidden="true" />{openLabel}
-                </span>
-              </button>
-            )}
+      <h3 id="church-location-title" className="m-0 flex items-center gap-2 text-base font-semibold text-ink"><MapPin size={18} className="text-primary" aria-hidden="true" />Onde fica a igreja?</h3>
+      {!hasLocation ? <p role="status" className="mb-3 mt-1 text-sm text-muted">Nenhum local selecionado. Busque um endereço ou marque a localização no mapa.</p> : null}
+      {!expanded ? <div className="mt-3">
+        {useGoogle ? <GoogleLocationMap location={location} center={center} onLocationChange={onLocationChange} onAddressChange={onAddressChange} onError={(message) => { setGoogleFailed(true); setSelectionError(message); }} onSelectionError={setSelectionError} />
+          : <LocationSearch search={search} onSelect={selectSearchResult} />}
+        {hasLocation && !useGoogle ? (
+          <div className={classNames(mapFrameClass, "mt-3 h-28")} aria-label="Prévia da localização escolhida">
+            {!isTest ? <Suspense fallback={<div className="h-full bg-selection/40" />}><FallbackMap key={`${location.latitude},${location.longitude}`} location={location} center={center} focusKey={0} interactive={false} /></Suspense> : null}
           </div>
-          {expanded ? (
-            <ExpandedLocationPicker
-              location={location}
-              center={center}
-              searchNear={searchNear}
-              onCancel={() => { setExpanded(false); openButtonRef.current?.focus(); }}
-              onConfirm={(next, pointAddress) => { confirmFromExpanded(next, pointAddress); openButtonRef.current?.focus(); }}
-            />
-          ) : null}
-        </>
-      )}
+        ) : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button ref={openButtonRef} type="button" onClick={() => setExpanded(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-primary hover:bg-selection focus-visible:outline-2 focus-visible:outline-primary">
+            <MapPin size={16} aria-hidden="true" />{openLabel}
+          </button>
+          <button type="button" onClick={locateMe} disabled={gpsStatus === "loading"} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-primary hover:bg-selection focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-65">
+            {gpsStatus === "loading" ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LocateFixed size={16} aria-hidden="true" />}
+            {gpsStatus === "loading" ? "Localizando…" : "Usar minha localização"}
+          </button>
+        </div>
+      </div> : null}
+      {expanded ? <ExpandedLocationPicker
+        location={location}
+        center={center}
+        centerZoom={centerZoom}
+        initialDraft={mapDraft}
+        address={address}
+        search={search}
+        onCancel={draft => { setMapDraft(draft); setExpanded(false); queueMicrotask(() => openButtonRef.current?.focus()); }}
+        onConfirm={(next, pointAddress, lookUpMissing) => { confirmFromExpanded(next, pointAddress, lookUpMissing); queueMicrotask(() => openButtonRef.current?.focus()); }}
+      /> : null}
 
       {selectionError ? <p role="alert" className="mb-0 mt-2 text-sm text-danger">{selectionError}</p> : null}
 
-      <div role="status" className={classNames("mt-3 flex items-start gap-3 rounded-xl px-3.5 py-3 text-sm", hasLocation ? "bg-success/10 text-success" : "bg-warning/10 text-warning")}>
-        {hasLocation ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-success" aria-hidden="true" /> : <MapPin size={18} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />}
-        <span className="min-w-0">
-          <strong className="block font-semibold">{hasLocation ? "Local marcado no mapa" : "Local ainda não marcado"}</strong>
-          <span className="block leading-5">
-            {hasLocation
-              ? useGoogle ? "Toque em outro ponto do mapa para ajustar." : desktop ? "Arraste o pino ou clique em outro ponto para ajustar." : "Toque no mapa para ajustar o ponto."
-              : useGoogle || desktop ? "Use a busca, clique no mapa ou use “Estou na igreja”." : "Use a busca ou toque em “Marcar no mapa”."}
-          </span>
-          {hasLocation ? <span className="mt-1 block text-xs tabular-nums text-success">{location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}</span> : null}
-        </span>
-      </div>
+      {hasLocation ? <p role="status" className="mb-0 mt-3 flex items-start gap-2 text-sm font-semibold text-success"><CheckCircle2 size={17} aria-hidden="true" />Local marcado no mapa</p> : null}
 
       <label className={`${labelClassName} mt-4`}>Endereço exibido no site
         <input value={address} onChange={(event) => { setAutoFilled(false); onAddressChange(event.target.value); }} placeholder="Rua, número, bairro e cidade" autoComplete="street-address" className={fieldClassName} />
@@ -239,10 +182,7 @@ export function ChurchLocationPicker({ location, center, searchNear, address, on
   );
 }
 
-function LocationSearch({ near, onSelect, compact = false }: { near?: ChurchLocation; onSelect: (place: GeocodedPlace) => void; compact?: boolean }) {
-  const id = useId();
-  const inputId = `${id}-search`;
-  const hintId = `${id}-hint`;
+function useLocationSearch(near?: ChurchLocation) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [results, setResults] = useState<GeocodedPlace[]>([]);
@@ -267,50 +207,72 @@ function LocationSearch({ near, onSelect, compact = false }: { near?: ChurchLoca
     }
   }
 
+  function change(value: string) {
+    abortRef.current?.abort();
+    setQuery(value);
+    setResults([]);
+    setStatus("idle");
+  }
+
+  return { query, status, results, tooShort, run, change };
+}
+
+type LocationSearchState = ReturnType<typeof useLocationSearch>;
+
+function LocationSearch({ search, onSelect, compact = false }: { search: LocationSearchState; onSelect: (place: GeocodedPlace) => void; compact?: boolean }) {
+  const id = useId();
+  const inputId = `${id}-search`;
+  const hintId = `${id}-hint`;
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const { query, status, results, tooShort, run, change } = search;
+
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     // O campo está dentro do formulário da igreja: Enter busca em vez de salvar.
     if (event.key === "Enter") { event.preventDefault(); void run(); }
-    if (event.key === "Escape" && results.length) { event.stopPropagation(); setResults([]); setStatus("idle"); }
+    if (event.key === "ArrowDown" && results.length) {
+      event.preventDefault();
+      resultsRef.current?.querySelector("button")?.focus();
+    }
+    if (event.key === "Escape" && results.length) { event.stopPropagation(); change(query); }
   }
 
   return (
     <div className={compact ? "relative" : undefined}>
       <label htmlFor={inputId} className="sr-only">Buscar localização</label>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <div className="relative min-w-0 flex-1">
           <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input
             id={inputId}
             type="search"
             value={query}
-            onChange={(event) => { setQuery(event.target.value); if (status !== "loading") setStatus("idle"); }}
+            onChange={event => change(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Ex.: Paróquia São José, Campinas"
+            placeholder="Nome da igreja, rua ou endereço"
             autoComplete="off"
             enterKeyHint="search"
             aria-describedby={hintId}
             className={`${fieldClassName} mt-0 pl-10`}
           />
         </div>
-        <button type="button" onClick={() => void run()} disabled={tooShort || status === "loading"} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-          {status === "loading" ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
-          Buscar
+        <button type="button" aria-label="Buscar endereço" onClick={() => void run()} disabled={tooShort || status === "loading"} className="grid min-h-11 w-11 shrink-0 place-items-center rounded-lg border border-line bg-surface text-primary hover:bg-selection focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50">
+          {status === "loading" ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Search size={17} aria-hidden="true" />}
         </button>
       </div>
       <p id={hintId} className={compact ? "sr-only" : "m-0 mt-1.5 text-xs text-muted"}>Inclua a cidade para resultados mais precisos. Busca com dados do OpenStreetMap.</p>
 
       {/* No mapa ampliado os resultados flutuam sobre o mapa em vez de empurrá-lo. */}
-      <div aria-live="polite" className={compact ? "absolute inset-x-0 top-full z-[1100] max-h-[50dvh] overflow-y-auto rounded-xl bg-white shadow-[0_12px_32px_rgb(15_23_42/0.22)] empty:hidden" : undefined}>
+      <div ref={resultsRef} aria-live="polite" className={compact ? "absolute inset-x-0 top-full z-[1100] max-h-[50dvh] overflow-y-auto rounded-xl border border-line bg-surface empty:hidden" : undefined}>
         {status === "loading" ? <p className={classNames("m-0 text-sm text-muted", compact ? "px-3.5 py-3" : "mt-2")}>Buscando…</p> : null}
         {status === "error" ? <p role="alert" className={classNames("m-0 text-sm text-danger", compact ? "px-3.5 py-3" : "mt-2")}>A busca não respondeu. Tente de novo em instantes ou marque direto no mapa.</p> : null}
-        {status === "done" && !results.length ? <p className={classNames("m-0 text-sm text-muted", compact ? "px-3.5 py-3" : "mt-2")}>Nenhum lugar encontrado. Tente rua e cidade, ou mova o mapa até o local.</p> : null}
+        {status === "done" && !results.length ? <p className={classNames("m-0 text-sm text-muted", compact ? "px-3.5 py-3" : "mt-2")}>Não encontramos esse endereço. Você pode marcar o local diretamente no mapa.</p> : null}
         {status === "done" && results.length ? (
           <ul aria-label="Resultados da busca" className={classNames("m-0 list-none divide-y divide-line overflow-hidden rounded-xl p-0", compact ? "" : "mt-2 border border-line")}>
             {results.map((place) => (
               <li key={place.id}>
                 <button
                   type="button"
-                  onClick={() => { onSelect(place); setResults([]); setStatus("idle"); setQuery(place.name); }}
+                  onClick={() => { change(query); onSelect(place); }}
                   className="flex min-h-14 w-full items-start gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-selection/50 focus-visible:-outline-offset-2"
                 >
                   <MapPin size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
@@ -328,34 +290,45 @@ function LocationSearch({ near, onSelect, compact = false }: { near?: ChurchLoca
   );
 }
 
-type PointAddress = { status: "idle" | "loading" | "ready" | "empty"; address?: string };
+type PointAddress = { status: "idle" | "loading" | "ready" | "empty" | "error"; address?: string };
+type MapDraft = { point: ChurchLocation; address?: string; accuracy?: number };
+
+function samePoint(a: ChurchLocation, b: ChurchLocation) {
+  return Math.abs(a.latitude - b.latitude) < 0.000001 && Math.abs(a.longitude - b.longitude) < 0.000001;
+}
 
 /**
  * Marcação em tela cheia (celular) ou painel amplo (desktop).
  * O pino fica fixo no centro e a pessoa move o mapa por baixo dele, o que é mais
  * preciso do que arrastar um marcador pequeno com o dedo.
  */
-function ExpandedLocationPicker({ location, center, searchNear, onCancel, onConfirm }: {
+function ExpandedLocationPicker({ location, center, centerZoom, initialDraft, address, search, onCancel, onConfirm }: {
   location: ChurchLocation;
   center: ChurchLocation;
-  searchNear?: ChurchLocation;
-  onCancel: () => void;
-  onConfirm: (location: ChurchLocation, address?: string) => void;
+  centerZoom?: number;
+  initialDraft?: MapDraft;
+  address: string;
+  search: LocationSearchState;
+  onCancel: (draft?: MapDraft) => void;
+  onConfirm: (location: ChurchLocation, address: string | undefined, lookUpMissing: boolean) => void;
 }) {
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
-  const initial = validLocation(location) ? location : center;
-  const [draft, setDraft] = useState<ChurchLocation>(initial);
-  const [focus, setFocus] = useState<{ key: number; location: ChurchLocation }>({ key: 0, location: initial });
-  const [pointAddress, setPointAddress] = useState<PointAddress>({ status: "idle" });
+  const existing = validLocation(location) ? location : undefined;
+  const [draft, setDraft] = useState<ChurchLocation | undefined>(initialDraft?.point ?? existing);
+  const draftRef = useRef(draft);
+  const [accuracy, setAccuracy] = useState(initialDraft?.accuracy);
+  const [focus, setFocus] = useState({ key: 0, location: draft ?? { latitude: 0, longitude: 0 } });
+  const initialAddress = initialDraft ? initialDraft.address : existing ? address.trim() : undefined;
+  const [pointAddress, setPointAddress] = useState<PointAddress>(initialAddress ? { status: "ready", address: initialAddress } : { status: "idle" });
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
-  const searchedRef = useRef<{ location: ChurchLocation; address: string } | null>(null);
   const reverseTimer = useRef<number | undefined>(undefined);
   const reverseAbort = useRef<AbortController | null>(null);
-  const cancelRef = useRef(onCancel);
-  cancelRef.current = onCancel;
+  function cancel() { onCancel(draft ? { point: draft, address: pointAddress.address, accuracy } : undefined); }
+  const cancelRef = useRef(cancel);
+  cancelRef.current = cancel;
 
   useEffect(() => {
     backRef.current?.focus();
@@ -389,29 +362,29 @@ function ExpandedLocationPicker({ location, center, searchNear, onCancel, onConf
         const place = await reversePlace(next, controller.signal);
         if (!controller.signal.aborted) setPointAddress(place?.address ? { status: "ready", address: place.address } : { status: "empty" });
       } catch {
-        if (!controller.signal.aborted) setPointAddress({ status: "empty" });
+        if (!controller.signal.aborted) setPointAddress({ status: "error" });
       }
     }, 800);
   }, []);
 
-  const onCenterChange = useCallback((next: ChurchLocation) => {
+  const onCenterChange = useCallback((next: ChurchLocation, explicit = false) => {
+    if (!validLocation(next) || (draftRef.current ? samePoint(draftRef.current, next) : !explicit && samePoint(center, next))) return;
+    draftRef.current = next;
     setDraft(next);
-    const searched = searchedRef.current;
-    // O mapa acabou de centralizar no resultado da busca: mantém o endereço dele.
-    if (searched && Math.abs(searched.location.latitude - next.latitude) < 0.00005 && Math.abs(searched.location.longitude - next.longitude) < 0.00005) return;
-    searchedRef.current = null;
+    setAccuracy(undefined);
     lookUpAddress(next);
-  }, [lookUpAddress]);
+  }, [center, lookUpAddress]);
 
   function moveTo(next: ChurchLocation) {
     setError("");
+    draftRef.current = next;
     setDraft(next);
     setFocus((current) => ({ key: current.key + 1, location: next }));
   }
 
   function selectPlace(place: GeocodedPlace) {
     const next = { latitude: place.latitude, longitude: place.longitude };
-    searchedRef.current = { location: next, address: place.address };
+    setAccuracy(undefined);
     window.clearTimeout(reverseTimer.current);
     reverseAbort.current?.abort();
     setPointAddress({ status: "ready", address: place.address });
@@ -421,71 +394,66 @@ function ExpandedLocationPicker({ location, center, searchNear, onCancel, onConf
   function locateMe() {
     setGpsStatus("loading");
     void currentPosition().then(
-      (next) => { setGpsStatus("idle"); moveTo(next); },
+      (next) => { setGpsStatus("idle"); setAccuracy(next.accuracy); moveTo(next); lookUpAddress(next); },
       (message: string) => { setGpsStatus("idle"); setError(message); },
     );
   }
 
   return createPortal(
-    <div className="admin-theme fixed inset-0 z-[90] flex bg-black/45 md:p-6" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
-      <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="mx-auto flex h-full w-full flex-col overflow-hidden bg-white text-ink shadow-2xl md:max-w-6xl md:rounded-2xl">
-        <header className="relative z-[1100] border-b border-line bg-white px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] md:px-5 md:pt-4">
+    <div className="admin-theme fixed inset-0 z-[90] flex bg-black/45 md:p-6" onMouseDown={(event) => event.target === event.currentTarget && cancel()}>
+      <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="mx-auto flex h-full w-full flex-col overflow-hidden bg-surface text-ink shadow-xl md:max-w-6xl md:rounded-2xl">
+        <header className="relative z-[1100] border-b border-line px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] md:px-5 md:pt-4">
           <div className="mb-3 flex items-center gap-2">
-            <button ref={backRef} type="button" onClick={onCancel} aria-label="Voltar ao formulário sem alterar" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink hover:bg-selection focus-visible:outline-2 focus-visible:outline-primary">
+            <button ref={backRef} type="button" onClick={cancel} aria-label="Voltar ao formulário sem alterar" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink hover:bg-selection focus-visible:outline-2 focus-visible:outline-primary">
               <ArrowLeft size={20} aria-hidden="true" />
             </button>
             <div className="min-w-0">
               <h2 id={titleId} className="m-0 text-lg font-semibold leading-6">Marcar local da igreja</h2>
-              <p className="m-0 hidden text-sm text-muted md:block">Mova o mapa até o pino ficar sobre a entrada da igreja.</p>
+              <p className="m-0 text-xs text-muted">Toque no local ou alinhe a entrada ao pino.</p>
             </div>
           </div>
-          <LocationSearch near={searchNear} onSelect={selectPlace} compact />
+          <LocationSearch search={search} onSelect={selectPlace} compact />
         </header>
 
         <div className="relative isolate min-h-0 flex-1 bg-canvas">
           {isTest
             ? <div className="h-full w-full" aria-label="Mapa ampliado" />
-            : <Suspense fallback={<div className="h-full w-full animate-pulse bg-canvas" />}><FallbackMap location={focus.location} center={initial} focusKey={focus.key} mode="center" onCenterChange={onCenterChange} /></Suspense>}
+            : <Suspense fallback={<div role="status" className="grid h-full place-items-center text-sm text-muted">Carregando mapa…</div>}><FallbackMap location={focus.location} center={center} centerZoom={centerZoom} focusKey={focus.key} mode="center" onCenterChange={onCenterChange} /></Suspense>}
 
           {/* Pino fixo: a ponta marca exatamente o centro do mapa. */}
-          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 z-[1000]">
+          <div aria-hidden="true" className={classNames("pointer-events-none absolute left-1/2 top-1/2 z-[1000]", !draft && "opacity-45")}>
             <span className="absolute left-0 top-0 h-1.5 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink/25" />
             <span className="absolute left-0 top-0 block -translate-x-1/2 -translate-y-full" style={{ width: pinSize, height: pinHeight }} dangerouslySetInnerHTML={{ __html: pinHtml }} />
           </div>
 
-          {/* Começa depois dos botões de zoom para não cobri-los. */}
-          <p className="pointer-events-none absolute left-16 right-3 top-3 z-[1000] m-0 flex justify-center md:hidden">
-            <span className="inline-flex items-center gap-2 rounded-full bg-ink/85 px-3 py-1.5 text-xs font-semibold text-white shadow">
-              <Move size={14} className="shrink-0" aria-hidden="true" />Arraste o mapa até o pino ficar sobre a igreja
-            </span>
-          </p>
-
           <div className="absolute bottom-3 right-3 z-[1000]">
             <button type="button" onClick={locateMe} disabled={gpsStatus === "loading"} className={overlayButtonClass}>
               {gpsStatus === "loading" ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LocateFixed size={16} className="text-primary" aria-hidden="true" />}
-              {gpsStatus === "loading" ? "Localizando…" : "Estou na igreja"}
+              {gpsStatus === "loading" ? "Localizando…" : "Usar minha localização"}
             </button>
           </div>
         </div>
 
-        <footer className="border-t border-line bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 md:flex md:items-center md:gap-4 md:px-5 md:pb-4">
+        <footer className="border-t border-line px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 md:flex md:items-center md:gap-4 md:px-5 md:pb-4">
           <div className="min-w-0 flex-1" aria-live="polite">
-            <p className="m-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted">Ponto marcado</p>
+            <p className="m-0 text-sm font-semibold text-ink">{draft ? "Ponto selecionado" : "Nenhum ponto selecionado"}</p>
             <p className="m-0 mt-0.5 flex min-h-6 items-center gap-2 text-[15px] font-semibold leading-6">
               {pointAddress.status === "loading" ? <><LoaderCircle size={15} className="animate-spin text-muted motion-reduce:animate-none" aria-hidden="true" /><span className="font-normal text-muted">Buscando endereço…</span></>
                 : pointAddress.status === "ready" ? <span className="line-clamp-2">{pointAddress.address}</span>
                 : pointAddress.status === "empty" ? <span className="font-normal text-muted">Endereço não identificado. Você pode digitá-lo depois.</span>
-                : <span className="font-normal text-muted">Mova o mapa para escolher o ponto.</span>}
+                : pointAddress.status === "error" ? <span className="font-normal text-muted">A consulta do endereço falhou. Você pode confirmar o ponto.</span>
+                : draft ? <span className="font-normal text-muted">Você pode informar o endereço depois.</span> : null}
             </p>
-            <p className="m-0 text-xs tabular-nums text-muted">{draft.latitude.toFixed(6)}, {draft.longitude.toFixed(6)}</p>
+            {accuracy !== undefined ? <p className="m-0 text-xs text-muted">Precisão GPS aproximada de {Math.round(accuracy)} m. Confira a posição.</p> : null}
+            {draft ? <details className="text-xs text-muted"><summary className="min-h-6 cursor-pointer">Coordenadas</summary><p className="m-0 tabular-nums">{draft.latitude.toFixed(6)}, {draft.longitude.toFixed(6)}</p></details> : null}
             {error ? <p role="alert" className="m-0 mt-1 text-sm text-danger">{error}</p> : null}
           </div>
           <div className="mt-3 flex gap-2 md:mt-0 md:shrink-0">
-            <button type="button" onClick={onCancel} className="hidden min-h-12 rounded-xl px-4 text-sm font-semibold text-muted hover:bg-selection md:block">Cancelar</button>
             <button
               type="button"
-              onClick={() => onConfirm(draft, pointAddress.status === "ready" ? pointAddress.address : undefined)}
-              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:flex-none"
+              disabled={!draft || !validLocation(draft)}
+              onClick={() => draft && onConfirm(draft, pointAddress.address, pointAddress.status === "idle")}
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 md:flex-none"
             >
               <Check size={18} aria-hidden="true" />Confirmar local
             </button>

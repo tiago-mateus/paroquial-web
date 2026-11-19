@@ -36,6 +36,7 @@ export const router = createBrowserRouter([
   ...(demoMode ? [{ path: "/__demo/pagamento", element: <DemoCheckoutPage /> }] : []),
   {
     path: "/:tenantSlug",
+    id: "public-parish",
     element: <PublicLayout />,
     children: [
       { index: true, element: <PublicHomePage /> },
